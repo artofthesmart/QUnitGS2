@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <?!= styles ?>
+    <style>
+    #qunit-tests li li.fail {
+    white-space: normal; /* Needed to keep the "failed" on the same line in the assert list */
+    }  
+    </style  
+  </head>
+  <body>
+    <div id="qunit">
+      <h1 id="qunit-header"><span id="qunit-title-cross"></span>&nbsp<a href="<?= testUrl ?>"><?= title ?></a></h1>
+      <h2 id="qunit-banner" class="qunit-pass"></h2>
+      <?!= toolbar ?>
+      <h2 id="qunit-userAgent"></h2>
+      <div id="qunit-testresult" class="result p">
+        <div id="qunit-testresult-display">
+          Tests completed in <span id='qunit-runtime'></span> milliseconds.<br/>
+          <span id='qunit-passed' class='passed'></span> assertions of <span id='qunit-total' class='total'></span> passed,
+          <span id='qunit-failed' class='failed'></span> failed.
+        </div>
+        <div id="qunit-testresult-controls"></div>
+        <div class="clearfix"></div>
+      </div>
+      <ol id="qunit-tests"></ol>
+    </div>
+    <br><br>
+    <div id="qunit-raw-results"></div>
+    <div style="display: none" id='row-template'>
+      <li id="qunit-test-output">
+        <span id="qunit-test-module" class="module-name"></span>
+        <span id="qunit-test-banner" class="test-name"></span>
+        <b class="counts">(<b class="failed" id="qunit-test-failed"></b>, <b class="passed" id="qunit-test-passed"></b>, <span id="qunit-test-total"></span>)</b>
+        <span class="runtime" id="qunit-test-runtime"></span>
+        <ol id="qunit-test-block" class="qunit-assert-list"></ol>
+      </li>
+    </div>
+    <div style="display: none" id="assert-template">
+      <li class="fail">
+        <span class="test-message">failed</span>
+        <table>
+          <tbody>
+            <tr id="test-expected" class="test-expected"></tr>
+            <tr id="test-actual" class="test-actual"></tr>
+            <tr id="test-diff" class="test-diff"></tr>
+            <tr id="test-source" class="test-source"></tr>
+          </tbody>
+        </table>
+      </li>
+    </div>
+    <?!= _include('qunit.js') ?>
+  </body>
+</html>
