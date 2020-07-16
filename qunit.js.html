@@ -1,0 +1,282 @@
+  <script>
+  
+  /**
+   * When the web page is loaded get the test results from the server
+   */
+   
+  window.onload = function() {
+
+    addUserAgent()
+    addPassedTestsFilter()
+  
+    google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onError)
+      .getResultsFromServer()   
+      
+    // Private Functions
+    // -----------------
+    
+    function addUserAgent() {
+      var userAgentElement = id("qunit-userAgent")
+      if (userAgentElement) {
+        userAgentElement.innerHTML = "QUnit v2.9.2 (Google Apps Script port); "
+        userAgentString = document.createTextNode(window.navigator.userAgent)
+        userAgentElement.appendChild(userAgentString)
+      }
+    }
+    
+    function addPassedTestsFilter() {
+      var filter = id( "qunit-filter-pass" );
+      addEvent( filter, "change", function() {
+        var tmp,
+        ol = id( "qunit-tests" );
+        if ( filter.checked ) {
+          ol.className = ol.className + " hidepass";
+        } else {
+          tmp = " " + ol.className.replace( /[\n\t\r]/g, " " ) + " ";
+          ol.className = tmp.replace( / hidepass /, " " );
+        }
+      });
+    }
+  }
+
+  var testNumber = 1
+  
+  var TEST_ELEMENTS = {
+    module  : 'qunit-test-module',
+    name    : 'qunit-test-banner',
+    runtime : 'qunit-test-runtime',
+    passed  : 'qunit-test-passed', 
+    failed  : 'qunit-test-failed', 
+    total   : 'qunit-test-total'  
+  }
+
+  var TEST_HEADERS = {
+    runtime : 'qunit-runtime',
+    passed  : 'qunit-passed', 
+    failed  : 'qunit-failed', 
+    total   : 'qunit-total'  
+  }
+
+  function onSuccess(resultsString) {
+  
+    if (!resultsString) throw new Error('Empty results')
+  
+    var results = JSON.parse(resultsString)
+//    set('qunit-raw-results', resultsString) // DEBUG
+    
+    results.forEach(function(result) {         
+      var type = result.type
+      var value = result.value      
+      if (type === 'TESTS_RESULTS_ALL') {
+        setHeader(value)
+      } else if (type === 'TESTS_RESULTS_ONE') { 
+        addRow(value.results)
+        addTestResults(value.results)
+        addAssertions(value.assertions)
+        testNumber++
+      } else {
+        throw new Error('Bad result type: "' + type + '"')
+      }
+    })
+    
+    return
+
+    // Private Functions
+    // -----------------
+
+    function addRow(details) {
+    
+      var documentFragment = document.createDocumentFragment()      
+      var numberOfTemplates = document.querySelectorAll('#row-template').length
+      var temporaryNode = document.querySelectorAll('#row-template')[numberOfTemplates - 1].cloneNode(true); //true for deep clone         
+      initialiseTestElements()
+      documentFragment.appendChild(temporaryNode)
+      document.getElementById('qunit-tests').appendChild(documentFragment)
+      temporaryNode.style.display = "block"      
+      delete documentFragment
+      return
+      
+      // Private Functions
+      // -----------------
+      
+      function initialiseTestElements() {
+
+        var outputElement = temporaryNode.querySelector('#qunit-test-output')
+        outputElement.id = 'qunit-test-output' + testNumber 
+
+        var blockElement = temporaryNode.querySelector('#qunit-test-block') 
+        blockElement.id = 'qunit-test-block' + testNumber
+
+        // Toggle the visibility of the individual test results
+        addEvent(outputElement, "click", function() {
+          if (hasClass(blockElement, "qunit-collapsed" )) {
+            removeClass(blockElement, "qunit-collapsed")
+          } else {
+            addClass(blockElement, "qunit-collapsed")
+          }
+        });
+
+        outputElement.className = details.failed === 0 ? 'pass' : 'fail'      
+        
+        for (var element in TEST_ELEMENTS) {
+          if (!TEST_ELEMENTS.hasOwnProperty(element)) continue
+          var nextElementId = TEST_ELEMENTS[element]
+          var element = temporaryNode.querySelector('#' + nextElementId)
+          if (element === null) throw new Error('No element: ' + nextElementId)
+          element.id = nextElementId + testNumber
+        }
+      }
+      
+    } // onSuccess.addRow()
+
+    function setHeader(details) {
+    
+      setTitleCross()
+      
+      for (var element in TEST_HEADERS) {
+        if (!TEST_HEADERS.hasOwnProperty(element)) continue
+        set(TEST_HEADERS[element], escapeText(details[element]))
+      }
+      
+      return
+      
+      // Private Functions
+      // -----------------
+      
+      function setTitleCross() {
+        // show ✖ for good, ✔ for bad suite result in title
+        var cross = (details.failed !== 0) ? "\u2716" : "\u2714"
+        set('qunit-title-cross', cross)  
+      }
+    }
+
+    function addTestResults(details) {    
+    
+      // Add header summary for this test
+      for (var element in TEST_ELEMENTS) {      
+        if (!TEST_ELEMENTS.hasOwnProperty(element)) continue        
+        var nextValue = escapeText(details[element])
+        if (element === 'module' && nextValue) {nextValue += ': '}       
+        if (element === 'runtime' && nextValue) {nextValue += ' ms'}       
+        set(TEST_ELEMENTS[element] + testNumber, nextValue)
+      }
+      
+      // List passed test assertions (hidden by default)
+      var tests = ''
+      if (details.failed === 0) {
+        details.assertions.forEach(function(assertion) {
+          var message = assertion.message || 'okay'
+          tests += '<li class="pass"><span class="test-message">' + message + '</span></li>'
+        })
+        var blockElement = id('qunit-test-block' + testNumber)
+        blockElement.innerHTML = tests
+        addClass(blockElement, "qunit-collapsed")
+      }
+    }
+
+    function addAssertions(assertions) {
+    
+      assertions.forEach(function(details) {
+    
+        if (details.result) return 
+        
+        var documentFragment = document.createDocumentFragment()      
+        var numberOfTemplates = document.querySelectorAll('#assert-template').length      
+        var temporaryNode = document.querySelectorAll('#assert-template')[numberOfTemplates - 1].cloneNode(true); //true for deep clone   
+        temporaryNode.id = temporaryNode.id + numberOfTemplates
+        documentFragment.appendChild(temporaryNode)
+       
+        documentFragment.getElementById('test-expected').innerHTML = '<th>Expected: </th><td><pre>' + details.expected + '</pre></td>'
+        documentFragment.getElementById('test-actual').innerHTML = '<th>Result: </th><td><pre>' + details.actual + '</pre></td>'
+        documentFragment.getElementById('test-diff').innerHTML = '<th>Diff: </th><td><pre>' + details.diff + '</pre></td>'
+        documentFragment.getElementById('test-source').innerHTML = '<th>Source: </th><td><pre>Error ' + details.source + '</pre></td>'
+        
+        document.getElementById('qunit-test-block' + testNumber).appendChild(documentFragment)
+        temporaryNode.style.display = "block"      
+        delete documentFragment
+      })      
+    }
+  
+  } // onSuccess()
+
+  function onError(error) {
+    document.getElementById("qunit-tests").innerHTML = error
+  }
+
+  function getTimestamp() {
+    return ((new Date()).getTime())
+  }
+  
+  function get(name) {
+    if (!name) throw new Error('get() - bad name: "' + name + '"')
+    return document.getElementById && document.getElementById(name)
+  }
+
+  function set(name, value) {
+    get(name).innerHTML = value
+  }
+
+  function id(name) {
+    return document.getElementById && document.getElementById(name);
+  }
+  
+  function addEvent(elem, type, fn) {
+    elem.addEventListener(type, fn, false);
+  }
+
+  function hasClass(elem, name) {
+    return (" " + elem.className + " ").indexOf(" " + name + " ") >= 0;
+  }
+  
+  function addClass(elem, name) {
+    if (!hasClass(elem, name)) {
+      elem.className += (elem.className ? " " : "") + name;
+    }
+  }
+  
+  function toggleClass(elem, name, force) {
+    if (force || typeof force === "undefined" && !hasClass(elem, name)) {
+      addClass(elem, name);
+    } else {
+      removeClass(elem, name);
+    }
+  }
+  
+  function removeClass(elem, name) {
+    var set = " " + elem.className + " ";
+  
+    // Class name may appear multiple times
+    while (set.indexOf(" " + name + " ") >= 0) {
+      set = set.replace(" " + name + " ", " ");
+    }
+  
+    // Trim for prettiness
+    elem.className = typeof set.trim === "function" ? set.trim() : set.replace(/^\s+|\s+$/g, "");
+  }
+
+  // Escape text for attribute or text content.
+  function escapeText(s) {
+  
+  	if (s === undefined) {return ""}
+  	s = s + "";
+
+  	// Both single quotes and double quotes (for attributes)
+  	return s.replace(/['"<>&]/g, function (s) {
+  		switch (s) {
+  			case "'":
+  				return "&#039;";
+  			case "\"":
+  				return "&quot;";
+  			case "<":
+  				return "&lt;";
+  			case ">":
+  				return "&gt;";
+  			case "&":
+  				return "&amp;";
+  		}
+  	});
+  }
+
+  </script>
