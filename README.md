@@ -77,7 +77,7 @@ expect it to be), this should be your go-to choice.
 > security.
 
 ![Use the library by making your script a
-webapp.](images\single_import_test_only.png)
+webapp.](images/single_import_test_only.png)
 
 ### Option 2: Testing an already deployed web app.
 
@@ -86,14 +86,14 @@ You can export functionality from your app and import it into another project
 for testing, or you can have QUnit live alongside your app code.
 
 ![Use the library by importing your code and the library into a third testing
-app.](images\dual_import.png)
+app.](images/dual_import.png)
 
 The diagram above shows how you can import both QUnit2GS _and_ your project code
 into a third app. That app acts like Option #1 above and helps separate your
 production code from your testing code.
 
 ![Use the library by making your script a webapp that has multiple
-pages.](images\single_import_multipage_app.png)
+pages.](images/single_import_multipage_app.png)
 
 The diagram above shows how you can have QUnit2GS live alongside your production
 code. The only hitch is that you'll have to write some kind of router based on
