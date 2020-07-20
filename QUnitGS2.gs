@@ -98,12 +98,13 @@ function init() {
   QUnit.done(onAllTestsFinished)  
   QUnit.testDone(onTestDone)
   QUnit.log(onAssertResult)
-  return
+  return 
   
   // Private Functions
   // -----------------
   
   function onAllTestsFinished(details) {
+    
     push('TESTS_RESULTS_ALL', details)    
   }
   
@@ -318,4 +319,4 @@ function _getResultsFromServer() {
   return CACHE_.get('qunit_test_results')
 }
   
-var CACHE_ = CacheService.getScriptCache()
+var CACHE_ = CacheService.getUserCache()
