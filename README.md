@@ -1,14 +1,12 @@
-# QUnit2GS
+# QUnitGS2
 
 QUnit2GS is a Google Apps Script Library that allows Apps Script projects to be
 tested using the QUnit JavaScript testing framework -
 [qunitjs.com](http://qunitjs.com). Just add this library to your project and
 start writing tests in just a few minutes.
 
-Read more detailed usage instructions and see examples at 
-
-> **TODO (ArtOfTheSmart):** Build the microsite and write up some example uses,
-> projects.
+Read more detailed usage instructions and see examples at
+[QUnitGS2](http://qunitgs2.com).
 
 ## Usage
 
