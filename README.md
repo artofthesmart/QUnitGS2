@@ -6,7 +6,7 @@ tested using the QUnit JavaScript testing framework -
 start writing tests in just a few minutes.
 
 Read more detailed usage instructions and see examples at
-[QUnitGS2](http://qunitgs2.com).
+[QUnitGS2.com](http://qunitgs2.com).
 
 ## Usage
 
