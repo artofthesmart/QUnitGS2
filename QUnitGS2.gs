@@ -6,13 +6,15 @@
 (function() {"use strict"})()
 
 /**
+ * QUnitG2S
+ * ========
  *
  * <pre>
  * QUnit2GS is a Google Apps Script Library that allows Apps Script projects to be tested
  * using the QUnit JavaScript testing framework - qunitjs.com.
- 
+ *
  * << Usage >> 
- 
+ *
  * - Publish a "doGet()" that calls the following functions:
  *  
  *     function doGet() {
@@ -79,7 +81,14 @@
  * See https://api.qunitjs.com/config/QUnit.config for details.
  * </pre>
  */
- 
+
+/**
+ * <pre>
+ * Main initialisation function for QUnitGS2, called from the doGet in the 
+ * script project running the tests
+ * </pre>
+ */
+
 function init() {
   
   CACHE_.remove('qunit_test_results')  
@@ -104,7 +113,6 @@ function init() {
   // -----------------
   
   function onAllTestsFinished(details) {
-    
     push('TESTS_RESULTS_ALL', details)    
   }
   
@@ -293,19 +301,9 @@ function getHtml() {
 } // getHtml() 
 
 /**
- * Not part of the public API, but has to be global so that the web app can see it
- */
-
-function _include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent()
-}
-
-// Apps Script only runs sync, so just run callback immediately
-// var setTimeout = function(callback, timeout) {return callback()} // TODO
-
-/**
  * <pre>
- * Simply called by a function in the test project of the same name.
+ * Called by a function in the test project of the same name to get the results
+ * from the cache once the tests have completed
  *
  * For example:
  * 
@@ -315,8 +313,20 @@ function _include(filename) {
  *  </pre>
  */
 
-function _getResultsFromServer() {
+function getResultsFromServer() {
   return CACHE_.get('qunit_test_results')
 }
-  
+
+/**
+ * Not part of the public API, but has to be global so that the web app can see it
+ */
+
+function _include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent()
+}
+
+// Apps Script only runs sync, so setTimeoutis "stubbed out" and just runs the
+// callback immediately
+function setTimeout(callback, timeout) {return callback()} // TODO
+
 var CACHE_ = CacheService.getUserCache()

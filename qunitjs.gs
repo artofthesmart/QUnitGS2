@@ -1402,16 +1402,12 @@
   }
 
   function useSetTimeout() {
-    if (typeof HtmlService !== undefined) {
-      return function(callback, timeout) {return callback()}
-    } else {    
-      // Store setTimeout reference so es6-promise will be unaffected by
-      // other code modifying setTimeout (like sinon.useFakeTimers())
-      var globalSetTimeout = setTimeout;
-      return function () {
-        return globalSetTimeout(flush, 1);
-      };
-    }
+    // Store setTimeout reference so es6-promise will be unaffected by
+    // other code modifying setTimeout (like sinon.useFakeTimers())
+    var globalSetTimeout = setTimeout;
+    return function () {
+      return globalSetTimeout(flush, 1);
+    };
   }
 
   var queue = new Array(1000);
