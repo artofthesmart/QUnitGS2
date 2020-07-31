@@ -47,7 +47,7 @@ function getResultsFromServer() {
 ```
 
 > Further examples can be seen on the [QUnitGS2 website](#) and in the [QUnitGS2 Test
-> project](http://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M).
+> project](http://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit).
 
 ## Deploy as a web app.
 
@@ -107,7 +107,7 @@ router.](https://medium.com/@fro_g/routing-in-javascript-d552ff4d2921)
 QUnitGS2 provides a wrapper to the main QUnit library. It creates the HTML/CSS
 to display in an Apps Script web app based on the JSON test results returned by
 various QUnit callback functions. This is in contrast to how the [QUnitGS
-library based on v1 worked](github.com/simula-innovation/qunit/tree/gas/gas),
+library based on v1 worked](http://github.com/simula-innovation/qunit/tree/gas/gas),
 which was to update the main library to display the HTML as a web app.
 
 The published QUnit library functions are in a separate file for the library
