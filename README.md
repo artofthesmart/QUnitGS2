@@ -6,7 +6,14 @@ tested using the QUnit JavaScript testing framework -
 start writing tests in just a few minutes.
 
 Read more detailed usage instructions and see examples at
-[QUnitGS2.com](http://qunitgs2.com).
+[QUnitGS2.com](https://qunitgs2.com).
+
+## Website
+
+The authored Grav website pages are maintained in
+[`website/user/pages`](website/user/pages). Installed themes, plugins,
+configuration, runtime data, and administrator credentials remain outside this
+repository.
 
 ## Usage
 
