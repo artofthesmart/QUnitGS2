@@ -19,6 +19,12 @@ page structure without installing Grav. Run just these checks with
 
 HTML tests exercise `getHtml()` and its configuration/template bindings.
 
+Result-state tests evaluate the browser's record validation function without a
+DOM. They check real bundled-QUnit payloads (including skipped/todo/zero-assertion
+tests) and corrupted or partial copies; they do not replace browser rendering
+coverage. `runner.cjs` owns collection, `html-service.cjs` owns limited template
+evaluation, and `browser.cjs` shares process isolation and browser delivery setup.
+
 ## Browser integration tests
 
 Install the development-only browser test dependency and Chromium:
@@ -42,7 +48,12 @@ not interfere with the bundled QUnit engine's stack-source detection.
 
 The browser checks cover visible exception messages, literal message text,
 stack traces, hook failures, subsequent tests, totals, and existing collapse and
-filter class toggles. They do not validate the external stylesheet's appearance.
+filter class toggles. Result-state checks also hold the bridge unresolved to
+inspect loading, inject unavailable/malformed/partial responses and transport
+errors, force a rendering failure after a usable row, and check that only
+verified completion displays suite totals. They assert literal values/sources
+while retaining generated diff elements and neutral zero-assertion completion.
+They do not validate the external stylesheet's appearance.
 
 Neither suite simulates Google's deployment, library binding, cache quotas, or
 runtime scheduling. Deployed Apps Script smoke tests in

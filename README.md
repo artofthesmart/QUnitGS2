@@ -120,6 +120,25 @@ in order to control which page a user sees when loading your application.
 [Learn more about writing your own
 router.](https://medium.com/@fro_g/routing-in-javascript-d552ff4d2921)
 
+## Result states
+
+The results page starts with a neutral **Loading test results** message. It only
+shows completed pass/fail totals after checking the suite summary against the
+returned test and assertion records. An explicit zero-assertion completion is
+shown neutrally, not as a passing suite.
+
+No returned payload is **Results unavailable**. Missing completion summaries or
+inconsistent records produce **Incomplete results**, keeping usable rows and
+labeling unfinished tests with recorded assertion counts only. Loading, parsing,
+and rendering errors are displayed as text rather than leaving a passing banner.
+Error messages and assertion values are literal text; generated comparison diffs
+retain their markup.
+
+This checks one cached response; it does not retry, fix asynchronous scheduling,
+or establish that results belong to the latest run. An empty page or missing
+summary is not proof that tests passed. These changes require a library version
+containing them or the updated source.
+
 ## Differences from original QUnit library
 
 QUnitGS2 provides a wrapper to the main QUnit library. It creates the HTML/CSS

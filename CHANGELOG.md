@@ -2,6 +2,42 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Result-state reliability - 2026-09-14
+
+### Fixed
+
+- Replaced the initial passing banner and empty completion totals with a neutral
+  loading message. Completed suites now explicitly display pass or fail styling;
+  an explicit zero-assertion completion remains neutral.
+- Made unavailable payloads, invalid JSON, bridge failures, and rendering errors
+  visible without leaving stale passing indicators or unverified suite totals.
+- Checked result records, assertion outcomes, identifiers, and counts before
+  reporting suite completion. Missing summaries and inconsistent records now
+  show an incomplete warning while retaining usable test rows; unfinished test
+  counts describe recovered assertions, not successful completion.
+- Rendered assertion messages, expected/actual values, stack sources, and runtime
+  errors as literal text, keeping generated comparison diff markup separate.
+- Preserved test collapse and passed-test filtering, including the initial
+  `hidepassed` configuration and visible unfinished test rows.
+
+### Added
+
+- Node regression coverage for result validation and real bundled-QUnit output,
+  including skipped tests, expected and unexpected todo outcomes, zero-assertion
+  tests, exceptions, and fields omitted during JSON serialization.
+- Chromium regressions for loading before bridge resolution, completed suites,
+  malformed and partial results, transport/rendering failures, safe text
+  presentation, and clearing stale success indicators.
+
+### Compatibility
+
+The public API, cache format, and test scheduling are unchanged. The page reads
+one cached response without polling or retries; it cannot establish run freshness
+or repair server-side execution and cache failures. This does not resolve the
+underlying scheduling/procedure questions in issues #5 and #11. Deployed Apps
+Script behavior remains unverified locally; library versions are published and
+selected separately from repository changes.
+
 ## Exception reporting fixes - 2026-09-14
 
 ### Fixed
