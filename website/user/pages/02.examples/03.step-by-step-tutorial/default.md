@@ -3,135 +3,152 @@ title: 'Step-by-step tutorial'
 media_order: 'add-new-apps-script-file.png,add-the-library-code.png,add-web-app-details.png,menu-bar-deploy-as-web-app.png,add-production-code.png,copy-paste-test-code.png,qunit-in-apps-script-tests-passing.png,production-code-fix-to-pass-tests.png,broken-qunit-tests-page.png,add-qunit-tests-to-apps-script-file.png,empty-qunit-tests-page.png,deployed-web-app-urls.png,name-the-new-script-file.png,add-qunit-library.png,name-the-apps-script-project.png,new-apps-script-project.png,Screenshots.psd'
 allowCSS: default
 allowJS: default
-subtitle: 'See how it''s done with lots of pictures.'
+subtitle: 'Write a test, watch it catch a bug, and fix the code with confidence.'
 show_header_image: false
 show_clickthrough: true
 ---
 
-Let's work through a step-by-step example of how to get QUnit set up for a new project.  It seems more complicated here, but once you get the hang of it, you can add tests to your projects in less than a minute.
+In this tutorial, you will test a function that divides two numbers and rounds
+the result. We will deliberately leave out the rounding, let a test catch the
+mistake, and then fix it. You only need a Google account with access to Apps
+Script and a browser.
 
 ===
 
-Start by loading the [Apps Script home page](https://script.google.com/home), and then creating a new project.
+## 1. Create a practice project
 
-![The home page and new project button](new-apps-script-project.png)
+Open the [Apps Script home page](https://script.google.com/home), click
+**New project**, and name it `QUnitGS2 practice`. A new standalone project keeps
+this exercise separate from your real files and data.
 
-Go ahead and name the project by clicking the “Untitled Project” along the top.  Then click OK.
+## 2. Add QUnitGS2
 
-![Name your Apps Script project](name-the-apps-script-project.png)
+Next to **Libraries** in the editor sidebar, click **+**. Paste this ID into
+**Script ID**, then click **Look up**:
 
-We need to add the QUnit library, so click `Resources` > `Libraries…` in the menu bar.
+```text
+1tXPhZmIyYiA_EMpTRJw0QpVGT5Pdb02PpOHCi9A9FFidblOc9CY_VLgG
+```
 
-![Click “Libraries…” in the menu bar.](add-qunit-library.png)
+Select the latest numbered version available. Set the identifier to `QUnitGS2`
+and click **Add**. The identifier is the name your code will use to call the
+library; `QUnitGS2` and `QunitGS2` are not interchangeable.
 
-Now copy the library ID below and paste it into the box that says `Add a library`.  Click add.
+These steps use the current Apps Script editor. Older instructions mentioning
+**Resources > Libraries** or **Publish > Deploy as web app** refer to the legacy
+editor; use the sidebar and **Deploy** menu instead.
 
-**Library ID:** `1tXPhZmIyYiA_EMpTRJw0QpVGT5Pdb02PpOHCi9A9FFidblOc9CY_VLgG`
+## 3. Write the function we want to test
 
-![Add the library](add-the-library-code.png)
-
-Great!  The library is added.  Now let’s add another script file that will run those tests.  Click `File` > `New` > `Script file`.
-
-![Add a script file for your test code to live in](add-new-apps-script-file.png)
-
-Give it a name, and click `OK`.
-
-![Add the name for the new script](name-the-new-script-file.png)
-
-Now copy the code below and paste it into the new `Tests.gs` file.  This code is important. If you want to know more about what it does, read the full guide on the home page.
+Replace the starter code in `Code.gs` with this deliberately incomplete function:
 
 ```javascript
-// Alias used by the examples below.
+function divideThenRound(numerator, denominator) {
+  return numerator / denominator;
+}
+```
+
+Its name promises rounding, but its implementation only divides. Rather than
+checking the answer by hand each time, let's capture that promise in a test.
+
+## 4. Add the runner and a test
+
+Next to **Files**, click **+ > Script** and name the file `Tests` (the editor adds
+`.gs`). Paste this entire block into `Tests.gs`:
+
+```javascript
 var QUnit = QUnitGS2.QUnit;
 
-// HTML get function
 function doGet() {
-   QUnitGS2.init();
-
-   /**
-   * Add your test functions here.
-   */
-
-   QUnit.start();
-   return QUnitGS2.getHtml();
+  QUnitGS2.init();
+  registerMathTests();
+  QUnit.start();
+  return QUnitGS2.getHtml();
 }
 
-// Retrieve test results when ready.
 function getResultsFromServer() {
-   return QUnitGS2.getResultsFromServer();
+  return QUnitGS2.getResultsFromServer();
 }
-```
 
-!! **Important:** If your tests are defined as functions outside of where you plan to run them, like in the [QUnitGS2 test suite](https://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit), then be mindful of your file load order. Said another way, be sure that your tests run pretty much in the last file on the list.  Before the V8 runtime in Apps Script, you didn't need to worry about the order in which your files loaded.  _Now_ the load order matters, [read more about it here](https://developers.google.com/apps-script/guides/v8-runtime/migration#avoid_calling_functions_before_they_are_parsed). Normally it starts with the oldest files and finishes with the newest ones, but you can also sort alphabetically from the menu bar with `View` > `sort files alphabetically`.  If you use the [Apps Script Color Chrome extension](https://chrome.google.com/webstore/detail/appsscript-color/ciggahcpieccaejjdpkllokejakhkome?hl=en) then it's hard to know what your load order is, so be careful.
+function registerMathTests() {
+  QUnit.module("Math");
 
-Now your code file will look like this.
-
-![Add required test code to your new Tests file](copy-paste-test-code.png)
-
-Go back to your Code.gs file using the pane on the left, and now let’s write a simple function that we can test.
-
-```javascript
-function divideThenRound(numerator, denominator) {
-  return numerator/denominator;
-}
-```
-
-It’ll look like this.
-
-![Write a simple function that we can test](add-production-code.png)
-
-Now click `Publish` > `Deploy as web app…` in the menu bar.
-
-![Find Publish in the menu bar](menu-bar-deploy-as-web-app.png)
-
-Name your new project version, and click `Deploy`.
-
-![Name and deploy a version of your apps script web app](add-web-app-details.png)
-
-Great!  Now your web app is deployed and loadable as an HTML web page.  You’ll see the dialog below with a URL linking to your test results.  If you look closely, there are actually _two_ links in this dialog.  The one in the text box is a link to the “deployed” version of your tests, and that link will only be updated when you re-deploy your web app with a new version.  The link that says `latest code` will always use whatever code you’re currently working on, regardless of whether you’ve re-deployed or not.
-
-You can use the first one for clients or your team so they only see the stable “releases”, while you can use the second one for testing and rapid development.
-
-![Your deployed web app URLs](deployed-web-app-urls.png)
-
-Try clicking the `latest code` link and you’ll see something like what’s shown below. We don’t have any tests yet!
-
-![The QUnit tests page for Apps Script](empty-qunit-tests-page.png)
-
-Let’s write some tests!  Remove the commented section that says `Add your test functions here.` and replace it with the code below.
-
-```javascript
-QUnit.module("Basic tests");
-  
-  QUnit.test("simple numbers", function( assert ) {
-    assert.equal(divideThenRound(10, 2), 5, "whole numbers");
-    assert.equal(divideThenRound(10, 4), 3, "decimal numbers");
+  QUnit.test("divides and rounds", function(assert) {
+    assert.strictEqual(divideThenRound(10, 2), 5, "whole numbers");
+    assert.strictEqual(divideThenRound(10, 4), 3, "fractional results round up");
   });
-```
-
-Now your code file will look like the picture below.
-
-![Your new QUnit tests](add-qunit-tests-to-apps-script-file.png)
-
-If you reload your QUnit tests page, you’ll find that one test passes but the other fails.  
-
-![Broken QUnit tests in Apps Script](broken-qunit-tests-page.png)
-
-Oh no!  It’s because the function was expected to return the rounded result of dividing the two numbers, but instead it just returns the division.  Let’s update our `Code.gs` file to do the right thing.
-
-```javascript
-function divideThenRound(numerator, denominator) {
-  return Math.round(numerator/denominator);
 }
 ```
 
-![Update the code file to match what our tests expected](production-code-fix-to-pass-tests.png)
+Read `assert.strictEqual(actual, expected, message)` from left to right:
+call your function, say what it should return, then describe the behavior.
+`strictEqual` checks both the value and its type, so the number `3` is different
+from the string `"3"`.
 
-Now if you reload the tests page, you’ll find that both tests pass!  
+`registerMathTests()` defines the tests; `QUnit.start()` runs them. Keep test
+registration inside functions called by `doGet()`, after `QUnitGS2.init()`, rather
+than running tests at file load time. This avoids relying on script file order.
 
-![All tests passing in QUnit for Apps Script](qunit-in-apps-script-tests-passing.png)
+## 5. Run it and read the failure
 
-We did it!  Using unit testing, we found a bug in our code and fixed it so that all tests pass.  Now we’ll feel confident adding to this code or editing it, knowing that if we ever cause a breakage somewhere, it’ll appear in our tests.
+Save both files. Choose **Deploy > Test deployments**, select **Web app**, copy
+the URL ending in `/dev`, and open it in your browser. Use an account with editor
+access to the project. Review any authorization request before granting access.
+
+**Expected result: one test with 2 assertions, 1 passed and 1 failed.** A test
+fails if any assertion in it fails. Expand the test row if needed and look for
+the failing assertion:
+
+| Field | Value | Meaning |
+| --- | --- | --- |
+| Expected | `3` | The rounded answer promised by the test |
+| Actual | `2.5` | What the function returned |
+| Message | `fractional results round up` | The behavior that needs fixing |
+
+The screenshot below illustrates a failure in an older version of the runner.
+Its labels may differ from this example.
+
+![A failed rounding assertion shows the expected and actual values.](broken-qunit-tests-page.png)
+
+If no results appear, use [troubleshooting](/troubleshooting). The editor's
+**Run** button does not display the results page; open the web app URL instead.
+
+## 6. Fix the code, not the expectation
+
+Replace `divideThenRound()` in `Code.gs` with:
+
+```javascript
+function divideThenRound(numerator, denominator) {
+  return Math.round(numerator / denominator);
+}
+```
+
+Save and reload the same `/dev` URL. **Both assertions should now pass, with
+0 failed.** You do not need to create another deployment for each edit.
+
+![The results page after fixing the rounding function.](qunit-in-apps-script-tests-passing.png)
+
+If the result still shows `2.5`, check that you saved the file and opened `/dev`.
+An `/exec` URL keeps running its selected version until you
+[update the deployment](/quick-start-guide#share-a-versioned-test-runner).
+
+## 7. Add a regression test
+
+Inside `registerMathTests()`, after the existing `QUnit.test()` call, add:
+
+```javascript
+QUnit.test("rounds down below the halfway point", function(assert) {
+  assert.strictEqual(divideThenRound(9, 4), 2, "2.25 rounds to 2");
+});
+```
+
+Save and reload. You should now have **2 tests, 3 assertions passed, and 0 failed**.
+These tests will catch a future change that accidentally removes rounding.
+
+The example leaves division by zero unspecified. Before testing that case in
+your own application, decide whether your function should throw an error or
+return a particular value. Tests are most useful when they describe a deliberate
+contract.
 
 ## When a test throws an exception
 
@@ -146,3 +163,6 @@ the fix, select a published library version containing it or use the updated
 source. The consumer web app's latest-code URL does not override its selected
 library version. See the [test suite guide](/examples/qunitgs2-test-suite) for
 the exception regression suite and expected results.
+
+Continue with [writing and organizing tests](/how-to-guides/writing-tests), or
+apply the same approach to [spreadsheet data](/how-to-guides/testing-spreadsheet-code).

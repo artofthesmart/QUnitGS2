@@ -1,285 +1,299 @@
-  <script>
-  
-  /**
-   * When the web page is loaded get the test results from the server
-   */
-   
-  window.onload = function() {
+<script>
 
-    addUserAgent()
-    addPassedTestsFilter()
-  
-    google.script.run
-      .withSuccessHandler(onSuccess)
-      .withFailureHandler(onError)
-      .getResultsFromServer()
-      
-    return
-      
-    // Private Functions
-    // -----------------
-    
-    function addUserAgent() {
-      var userAgentElement = id("qunit-userAgent")
-      if (userAgentElement) {
-        userAgentElement.innerHTML = "QUnit (Google Apps Script port); "
-        userAgentString = document.createTextNode(window.navigator.userAgent)
-        userAgentElement.appendChild(userAgentString)
-      }
-    }
-    
-    function addPassedTestsFilter() {
-      var filter = id( "qunit-filter-pass" );
-      addEvent( filter, "change", function() {
-        var tmp,
-        ol = id( "qunit-tests" );
-        if ( filter.checked ) {
-          ol.className = ol.className + " hidepass";
+  window.onload = function() {
+    try {
+      id("qunit-userAgent").textContent =
+        "QUnit (Google Apps Script port); " + window.navigator.userAgent
+      var filter = id("qunit-filter-pass")
+      function applyFilter() {
+        if (filter.checked) {
+          addClass(id("qunit-tests"), "hidepass")
         } else {
-          tmp = " " + ol.className.replace( /[\n\t\r]/g, " " ) + " ";
-          ol.className = tmp.replace( / hidepass /, " " );
+          removeClass(id("qunit-tests"), "hidepass")
         }
-      });
+      }
+      addEvent(filter, "change", applyFilter)
+      applyFilter()
+
+      google.script.run
+        .withSuccessHandler(onSuccess)
+        .withFailureHandler(onError)
+        .getResultsFromServer()
+    } catch (error) {
+      onError(error)
     }
   }
 
-  var testNumber = 1
-  
   var TEST_ELEMENTS = {
     module  : 'qunit-test-module',
     name    : 'qunit-test-banner',
     runtime : 'qunit-test-runtime',
-    passed  : 'qunit-test-passed', 
-    failed  : 'qunit-test-failed', 
-    total   : 'qunit-test-total'  
+    passed  : 'qunit-test-passed',
+    failed  : 'qunit-test-failed',
+    total   : 'qunit-test-total'
   }
 
   var TEST_HEADERS = {
     runtime : 'qunit-runtime',
-    passed  : 'qunit-passed', 
-    failed  : 'qunit-failed', 
-    total   : 'qunit-total'  
+    passed  : 'qunit-passed',
+    failed  : 'qunit-failed',
+    total   : 'qunit-total'
   }
 
   function onSuccess(resultsString) {
-  
-    if (!resultsString) throw new Error('Empty results')
-  
-    var results = JSON.parse(resultsString)
-//    set('qunit-raw-results', resultsString) // DEBUG
-    
-    results.forEach(function(result) {         
-      var type = result.type
-      var value = result.value      
-      if (type === 'TESTS_RESULTS_ALL') {
-        setHeader(value)
-      } else if (type === 'TESTS_RESULTS_ONE') { 
-        addRow(value.results)
-        addTestResults(value.results)
-        addAssertions(value.assertions)
-        testNumber++
+    try {
+      setResultState('loading', 'Loading test results...')
+      id('qunit-tests').textContent = ''
+      if (resultsString === null || resultsString === undefined ||
+          (typeof resultsString === 'string' && resultsString.trim() === '')) {
+        setResultState('unavailable', 'Results unavailable: no cached results were returned. Completion could not be verified.')
+        return
+      }
+      if (typeof resultsString !== 'string') throw new Error('Expected a JSON result string.')
+      var results = analyzeResults(JSON.parse(resultsString))
+      results.tests.forEach(function(test, index) {
+        addTest(test, index + 1)
+      })
+      if (results.problems.length) {
+        setResultState('incomplete', 'Incomplete results: completion could not be verified. Available records are shown below.\n' +
+          results.problems.join('\n'))
+        return
+      }
+      var summary = results.summary
+      var state = summary.total === 0 ? 'empty' : summary.failed === 0 ? 'passed' : 'failed'
+      setResultState(state, state === 'empty' ? 'Tests completed: no assertions were reported.' :
+        state === 'passed' ? 'Tests completed: all assertions passed.' : 'Tests completed: failures reported.')
+      Object.keys(TEST_HEADERS).forEach(function(key) {
+        id(TEST_HEADERS[key]).textContent = summary[key]
+      })
+      id('qunit-testresult-display').hidden = false
+      id('qunit-title-cross').textContent = state === 'empty' ? '' : state === 'passed' ? '\u2714' : '\u2716'
+    } catch (error) {
+      onError(error)
+    }
+  }
+
+  // A completion callback alone is not enough if cached records were lost.
+  function analyzeResults(records) {
+    if (!Array.isArray(records)) throw new Error('Expected an array of result records.')
+    var tests = []
+    var problems = []
+    var summaries = []
+    var ids = Object.create(null)
+    records.forEach(function(record, index) {
+      if (!isRecord(record)) {
+        problems.push('Invalid result record ' + (index + 1) + '.')
+        return
+      }
+      if (record.type === 'TESTS_RESULTS_ALL') {
+        summaries.push(record.value)
+        return
+      }
+      if (record.type !== 'TESTS_RESULTS_ONE' || !isRecord(record.value) ||
+          typeof record.value.id !== 'string' || !record.value.id) {
+        problems.push('Unrecognized or malformed result record ' + (index + 1) + '.')
+        return
+      }
+      var value = record.value
+      if (ids[value.id]) {
+        problems.push('Duplicate test record: ' + value.id + '.')
+        return
+      }
+      ids[value.id] = true
+      var assertions = Array.isArray(value.assertions) ? value.assertions.filter(function(assertion) {
+        return isRecord(assertion) && typeof assertion.result === 'boolean' &&
+          assertion.testId === value.id
+      }) : []
+      var details = isRecord(value.results) ? value.results : {}
+      var failed = assertions.filter(function(assertion) { return !assertion.result }).length
+      var complete = validCounts(details) && validRuntime(details.runtime) &&
+        typeof details.name === 'string' && typeof details.module === 'string' &&
+        details.testId === value.id && Array.isArray(value.assertions) &&
+        assertions.length === value.assertions.length && details.total === assertions.length &&
+        details.failed === failed && Array.isArray(details.assertions) &&
+        details.assertions.length === assertions.length &&
+        assertions.every(function(assertion) {
+          return assertion.diff === undefined || typeof assertion.diff === 'string'
+        }) &&
+        details.assertions.every(function(assertion, index) {
+          return isRecord(assertion) && assertion.result === assertions[index].result
+        })
+      var first = assertions[0] || {}
+      var name = typeof details.name === 'string' ? details.name :
+        typeof first.name === 'string' ? first.name : 'Test ' + value.id
+      if (!complete) problems.push('Test "' + name + '" has incomplete or inconsistent results.')
+      tests.push({
+        complete: complete,
+        details: {
+          name: name,
+          module: typeof details.module === 'string' ? details.module :
+            typeof first.module === 'string' ? first.module : '',
+          runtime: complete ? details.runtime : '',
+          passed: assertions.length - failed,
+          failed: failed,
+          total: assertions.length
+        },
+        assertions: assertions
+      })
+    })
+    var summary = summaries.length === 1 ? summaries[0] : null
+    if (summaries.length === 0) {
+      problems.push('No suite completion summary was returned.')
+    } else if (summaries.length !== 1 || !validCounts(summary) || !validRuntime(summary.runtime)) {
+      problems.push('The suite completion summary is malformed or duplicated.')
+      summary = null
+    } else if (['total', 'passed', 'failed'].some(function(key) {
+      return summary[key] !== tests.reduce(function(total, test) { return total + test.details[key] }, 0)
+    })) {
+      problems.push('Suite totals do not match the available test assertions.')
+    }
+    return { tests: tests, summary: summary, problems: problems }
+  }
+
+  function isRecord(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+  }
+
+  function validCounts(details) {
+    return isRecord(details) && ['total', 'passed', 'failed'].every(function(key) {
+      return Number.isSafeInteger(details[key]) && details[key] >= 0
+    }) && details.total === details.passed + details.failed
+  }
+
+  function validRuntime(value) {
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0
+  }
+
+  function setResultState(state, message) {
+    id('qunit').setAttribute('data-result-state', state)
+    id('qunit-banner').className = state === 'passed' ? 'qunit-pass' :
+      state === 'failed' ? 'qunit-fail' : state === 'incomplete' ? 'qunit-incomplete' :
+      state === 'error' ? 'qunit-error' : 'qunit-neutral'
+    id('qunit-result-status').textContent = message
+    id('qunit-title-cross').textContent = ''
+    id('qunit-testresult-display').hidden = true
+    Object.keys(TEST_HEADERS).forEach(function(key) {
+      id(TEST_HEADERS[key]).textContent = ''
+    })
+  }
+
+  function addTest(test, number) {
+    var row = id('row-template').cloneNode(true)
+    row.id = 'qunit-row' + number
+    var output = row.querySelector('#qunit-test-output')
+    var block = row.querySelector('#qunit-test-block')
+    output.id += number
+    block.id += number
+    output.className = !test.complete ? 'incomplete' : test.details.failed === 0 ? 'pass' : 'fail'
+    addEvent(output, 'click', function() {
+      if (hasClass(block, 'qunit-collapsed')) {
+        removeClass(block, 'qunit-collapsed')
       } else {
-        throw new Error('Bad result type: "' + type + '"')
+        addClass(block, 'qunit-collapsed')
       }
     })
-    
-    return
-
-    // Private Functions
-    // -----------------
-
-    function addRow(details) {
-    
-      var documentFragment = document.createDocumentFragment()      
-      var numberOfTemplates = document.querySelectorAll('#row-template').length
-      var temporaryNode = document.querySelectorAll('#row-template')[numberOfTemplates - 1].cloneNode(true); //true for deep clone         
-      initialiseTestElements()
-      documentFragment.appendChild(temporaryNode)
-      document.getElementById('qunit-tests').appendChild(documentFragment)
-      temporaryNode.style.display = "block"      
-      delete documentFragment
-      return
-      
-      // Private Functions
-      // -----------------
-      
-      function initialiseTestElements() {
-
-        var outputElement = temporaryNode.querySelector('#qunit-test-output')
-        outputElement.id = 'qunit-test-output' + testNumber 
-
-        var blockElement = temporaryNode.querySelector('#qunit-test-block') 
-        blockElement.id = 'qunit-test-block' + testNumber
-
-        // Toggle the visibility of the individual test results
-        addEvent(outputElement, "click", function() {
-          if (hasClass(blockElement, "qunit-collapsed" )) {
-            removeClass(blockElement, "qunit-collapsed")
-          } else {
-            addClass(blockElement, "qunit-collapsed")
-          }
-        });
-
-        outputElement.className = details.failed === 0 ? 'pass' : 'fail'      
-        
-        for (var element in TEST_ELEMENTS) {
-          if (!TEST_ELEMENTS.hasOwnProperty(element)) continue
-          var nextElementId = TEST_ELEMENTS[element]
-          var element = temporaryNode.querySelector('#' + nextElementId)
-          if (element === null) throw new Error('No element: ' + nextElementId)
-          element.id = nextElementId + testNumber
-        }
-      }
-      
-    } // onSuccess.addRow()
-
-    function setHeader(details) {
-    
-      setTitleCross()
-      
-      for (var element in TEST_HEADERS) {
-        if (!TEST_HEADERS.hasOwnProperty(element)) continue
-        set(TEST_HEADERS[element], escapeText(details[element]))
-      }
-      
-      return
-      
-      // Private Functions
-      // -----------------
-      
-      function setTitleCross() {
-        // show ✖ for good, ✔ for bad suite result in title
-        var cross = (details.failed !== 0) ? "\u2716" : "\u2714"
-        set('qunit-title-cross', cross)  
-      }
+    Object.keys(TEST_ELEMENTS).forEach(function(key) {
+      var element = row.querySelector('#' + TEST_ELEMENTS[key])
+      var text = formatValue(test.details[key])
+      if (key === 'module' && text) text += ': '
+      if (key === 'runtime' && text) text += ' ms'
+      element.id += number
+      element.textContent = text
+    })
+    if (!test.complete) {
+      row.querySelector('.qunit-test-status').textContent = 'Incomplete - counts show recorded assertions only.'
+    } else if (test.details.failed === 0) {
+      addClass(block, 'qunit-collapsed')
     }
-
-    function addTestResults(details) {    
-    
-      // Add header summary for this test
-      for (var element in TEST_ELEMENTS) {      
-        if (!TEST_ELEMENTS.hasOwnProperty(element)) continue        
-        var nextValue = escapeText(details[element])
-        if (element === 'module' && nextValue) {nextValue += ': '}       
-        if (element === 'runtime' && nextValue) {nextValue += ' ms'}       
-        set(TEST_ELEMENTS[element] + testNumber, nextValue)
+    test.assertions.forEach(function(assertion) {
+      if (assertion.result) {
+        if (test.complete && test.details.failed > 0) return
+        var item = document.createElement('li')
+        item.className = 'pass'
+        var message = document.createElement('span')
+        message.className = 'test-message'
+        message.textContent = assertionMessage(assertion)
+        item.appendChild(message)
+        block.appendChild(item)
+      } else {
+        addAssertion(block, assertion)
       }
-      
-      // List passed test assertions (hidden by default)
-      var tests = ''
-      if (details.failed === 0) {
-        details.assertions.forEach(function(assertion) {
-          var message = assertion.message || 'okay'
-          tests += '<li class="pass"><span class="test-message">' + message + '</span></li>'
-        })
-        var blockElement = id('qunit-test-block' + testNumber)
-        blockElement.innerHTML = tests
-        addClass(blockElement, "qunit-collapsed")
-      }
-    }
+    })
+    row.style.display = 'block'
+    id('qunit-tests').appendChild(row)
+  }
 
-    function addAssertions(assertions) {
-    
-      assertions.forEach(function(details) {
-    
-        if (details.result) return 
-        
-        var documentFragment = document.createDocumentFragment()      
-        var numberOfTemplates = document.querySelectorAll('#assert-template').length      
-        var temporaryNode = document.querySelectorAll('#assert-template')[numberOfTemplates - 1].cloneNode(true); //true for deep clone   
-        temporaryNode.id = temporaryNode.id + numberOfTemplates
-        temporaryNode.querySelector('.test-message').textContent = details.message || 'failed'
-        documentFragment.appendChild(temporaryNode)
-       
-        documentFragment.getElementById('test-expected').innerHTML = '<th>Expected: </th><td><pre>' + details.expected + '</pre></td>'
-        documentFragment.getElementById('test-actual').innerHTML = '<th>Result: </th><td><pre>' + details.actual + '</pre></td>'
-        documentFragment.getElementById('test-diff').innerHTML = '<th>Diff: </th><td><pre>' + details.diff + '</pre></td>'
-        documentFragment.getElementById('test-source').innerHTML = '<th>Source: </th><td><pre>Error ' + details.source + '</pre></td>'
-        
-        document.getElementById('qunit-test-block' + testNumber).appendChild(documentFragment)
-        temporaryNode.style.display = "block"      
-        delete documentFragment
-      })      
-    }
-  
-  } // onSuccess()
+  function addAssertion(block, details) {
+    var row = id('assert-template').cloneNode(true)
+    row.removeAttribute('id')
+    row.querySelector('.test-message').textContent = assertionMessage(details)
+    var fields = [
+      ['expected', 'Expected: ', details.expected],
+      ['actual', 'Result: ', details.actual],
+      ['diff', 'Diff: ', details.diff],
+      ['source', 'Source: ', details.source]
+    ]
+    fields.forEach(function(field) {
+      var target = row.querySelector('#test-' + field[0])
+      target.removeAttribute('id')
+      var label = document.createElement('th')
+      label.textContent = field[1]
+      var cell = document.createElement('td')
+      var value = document.createElement('pre')
+      // Only the comparison diff is markup generated by QUnit, not raw assertion data.
+      if (field[0] === 'diff') {
+        value.innerHTML = typeof details.diff === 'string' ? details.diff : ''
+      } else {
+        value.textContent = formatValue(field[2])
+      }
+      target.appendChild(label)
+      cell.appendChild(value)
+      target.appendChild(cell)
+    })
+    row.style.display = 'block'
+    block.appendChild(row)
+  }
+
+  function assertionMessage(details) {
+    return details.message === undefined || details.message === null || details.message === '' ?
+      (details.result ? 'okay' : 'failed') : formatValue(details.message)
+  }
+
+  function formatValue(value) {
+    if (value === undefined) return ''
+    return typeof value === 'string' ? value : JSON.stringify(value)
+  }
 
   function onError(error) {
-    document.getElementById("qunit-tests").innerHTML = error
-  }
-
-  function getTimestamp() {
-    return ((new Date()).getTime())
-  }
-  
-  function get(name) {
-    if (!name) throw new Error('get() - bad name: "' + name + '"')
-    return document.getElementById && document.getElementById(name)
-  }
-
-  function set(name, value) {
-    get(name).innerHTML = value
+    var message = error && typeof error.message === 'string' ? error.message : formatValue(error)
+    setResultState('error', 'Unable to display test results: ' + message +
+      '\nCompletion could not be verified. Any rows shown may be incomplete.')
   }
 
   function id(name) {
-    return document.getElementById && document.getElementById(name);
+    return document.getElementById(name)
   }
-  
+
   function addEvent(elem, type, fn) {
-    elem.addEventListener(type, fn, false);
+    elem.addEventListener(type, fn, false)
   }
 
   function hasClass(elem, name) {
-    return (" " + elem.className + " ").indexOf(" " + name + " ") >= 0;
+    return (" " + elem.className + " ").indexOf(" " + name + " ") >= 0
   }
-  
+
   function addClass(elem, name) {
     if (!hasClass(elem, name)) {
-      elem.className += (elem.className ? " " : "") + name;
+      elem.className += (elem.className ? " " : "") + name
     }
   }
-  
-  function toggleClass(elem, name, force) {
-    if (force || typeof force === "undefined" && !hasClass(elem, name)) {
-      addClass(elem, name);
-    } else {
-      removeClass(elem, name);
-    }
-  }
-  
+
   function removeClass(elem, name) {
-    var set = " " + elem.className + " ";
-  
-    // Class name may appear multiple times
-    while (set.indexOf(" " + name + " ") >= 0) {
-      set = set.replace(" " + name + " ", " ");
+    var classes = " " + elem.className + " "
+    while (classes.indexOf(" " + name + " ") >= 0) {
+      classes = classes.replace(" " + name + " ", " ")
     }
-  
-    // Trim for prettiness
-    elem.className = typeof set.trim === "function" ? set.trim() : set.replace(/^\s+|\s+$/g, "");
+    elem.className = classes.trim()
   }
 
-  // Escape text for attribute or text content.
-  function escapeText(s) {
-  
-  	if (s === undefined) {return ""}
-  	s = s + "";
-
-  	// Both single quotes and double quotes (for attributes)
-  	return s.replace(/['"<>&]/g, function (s) {
-  		switch (s) {
-  			case "'":
-  				return "&#039;";
-  			case "\"":
-  				return "&quot;";
-  			case "<":
-  				return "&lt;";
-  			case ">":
-  				return "&gt;";
-  			case "&":
-  				return "&amp;";
-  		}
-  	});
-  }
-
-  </script>
+</script>

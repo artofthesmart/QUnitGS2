@@ -1,32 +1,11 @@
-const path = require('node:path');
-const { execFileSync } = require('node:child_process');
 const { test, expect } = require('@playwright/test');
+const { collectSuite, openResults } = require('./browser.cjs');
 
 async function renderSuite(page, source) {
-  // Keep Playwright's stack formatter out of QUnit's stack-source detection.
-  const { tests, summary, resultsString, html } = JSON.parse(execFileSync(process.execPath, [
-    '-e',
-    `const { runSuite } = require(process.argv[1]);
-     process.stdout.write(JSON.stringify(runSuite(require('node:fs').readFileSync(0, 'utf8'))));`,
-    path.join(__dirname, 'runner.cjs')
-  ], { input: source, encoding: 'utf8', timeout: 10000 }));
+  const suite = collectSuite(source);
+  const { tests, summary, html } = suite;
   expect(html).not.toContain('<?');
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await page.addInitScript(results => {
-    const bridge = {
-      withSuccessHandler(callback) { this.success = callback; return this; },
-      withFailureHandler(callback) { this.failure = callback; return this; },
-      getResultsFromServer() {
-        window.setTimeout(() => this.success(results), 0);
-      }
-    };
-    window.google = { script: { run: bridge } };
-  }, resultsString);
-  await page.route('**/*', route => route.request().url() === 'https://qunitgs2.test/'
-    ? route.fulfill({ contentType: 'text/html', body: html })
-    : route.abort());
-  await page.goto('https://qunitgs2.test/');
+  const errors = await openResults(page, suite);
   await expect(page.locator('#qunit-total')).toHaveText(String(summary.total));
   await expect(page.locator('#qunit-passed')).toHaveText(String(summary.passed));
   await expect(page.locator('#qunit-failed')).toHaveText(String(summary.failed));

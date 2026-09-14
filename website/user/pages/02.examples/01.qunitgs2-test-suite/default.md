@@ -5,22 +5,48 @@ allowCSS: default
 allowJS: default
 subtitle: 'A bigger example where we test QUnitGS2 itself.'
 show_header_image: false
-show_clickthrough: false
+show_clickthrough: true
 ---
 
-Take a look at the [consolidated live test source](https://github.com/artofthesmart/QUnitGS2/tree/master/tests/live)
-or the [Apps Script test project](https://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit)
-for more examples. It uses a more complicated setup to manage many tests. A
-[historical live results deployment](https://script.google.com/macros/s/AKfycbxGNuNyR-pec75X_whqf56rkoi8-8ne5aeK8bdctR-uyq5Wjwht/exec)
-is also available, but its source and library versions may differ from the
-current repository. It is not proof that the latest changes have been deployed.
-**Tests can take a long time to complete**, so be patient.
+The [consolidated live test source](https://github.com/artofthesmart/QUnitGS2/tree/master/tests/live) and
+[Apps Script test project](https://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit)
+provide a larger example based on tests from the original QUnit library. Use
+them as a reference after you have a [small runner working](/quick-start-guide).
 
-It should look like the image below.
+===
+
+## How to explore it
+
+1. Open the test project to browse its source. You do not need to edit it to
+   follow the documentation.
+2. Find `doGet()` and follow the functions that register its tests. Notice the
+   separation between the runner and the test groups.
+3. Pick a test for an assertion you use, such as `strictEqual` or `deepEqual`.
+   Read its inputs, expected value, and assertion message together.
+4. Adapt the pattern to your own project rather than copying the entire suite.
+   The [writing tests guide](/how-to-guides/writing-tests) shows a smaller
+   multi-file setup.
+
+## View the hosted results
+
+You can [open the historical hosted test runner](https://script.google.com/macros/s/AKfycbxGNuNyR-pec75X_whqf56rkoi8-8ne5aeK8bdctR-uyq5Wjwht/exec).
+Opening it runs the suite; it is not a static report. A large run can take around
+two minutes, so avoid repeatedly refreshing while it is working.
+Its source and library versions may differ from the current repository; it is
+not proof that the latest changes have been deployed.
+
+The results page should resemble this example:
 
 ![Example of QUnitGS2 test suite results.](QUnitGS2_test_suite_screenshot.png)
 
-These are actually the tests from the [original QUnit library](https://github.com/qunitjs/qunit/tree/master/test/main), intended to help test this implementation to make sure the results match.
+These tests help compare this adaptation with
+[upstream QUnit tests](https://github.com/qunitjs/qunit/tree/main/test/main).
+A passing hosted suite does not verify your application's behavior or the
+library version selected in your project. Run your own tests too.
+
+If the shared project or hosted deployment is unavailable, you can still use the
+self-contained [quick start](/quick-start-guide) and
+[tutorial](/examples/step-by-step-tutorial); neither depends on that deployment.
 
 ## One-command live testing
 
@@ -34,12 +60,14 @@ The published library deployment is not changed.
 
 ## Exception reporting regressions
 
-The pending companion [artofthesmart/QUnitGS2-Test#4](https://github.com/artofthesmart/QUnitGS2-Test/pull/4)
-adds an opt-in `?suite=exceptions` route. It has not been imported into this
-repository's live runner; the instructions below apply only to that companion
-change, not the consolidated default suite.
-Use a test project containing that suite and a QUnitGS2 library version with
-the exception-reporting fixes. The default suite is unchanged.
+The opt-in `?suite=exceptions` route is implemented in
+[artofthesmart/QUnitGS2-Test#4](https://github.com/artofthesmart/QUnitGS2-Test/pull/4),
+which is not yet merged into the companion repository's `master` branch.
+Use a test project containing that PR's source and a QUnitGS2 library version
+with the exception-reporting fixes. Neither a runner copied from companion
+`master` nor this repository's consolidated live runner includes that route.
+The hosted deployment should not be assumed to support it. That companion
+change leaves its default suite unchanged.
 
 The regression suite intentionally throws strings and `Error` objects before
 and after assertions and in all four setup/teardown hooks. It also tests
@@ -52,9 +80,8 @@ test is visible and the totals match, not when the page is all green.
 Check that exception messages appear as text, source details appear when
 available, and the final passing test is present. A blank page, missing totals,
 or missing failure rows does not count as success. See the companion
-[test instructions on the integration branch](https://github.com/artofthesmart/QUnitGS2-Test/blob/artofthesmart-exception-integration-regressions/test/README.md)
-for the exact cases, and the
-[integration PR](https://github.com/artofthesmart/QUnitGS2-Test/pull/4).
+[test instructions on the exception-integration branch](https://github.com/artofthesmart/QUnitGS2-Test/blob/artofthesmart-exception-integration-regressions/test/README.md)
+for the exact cases.
 
 ### Testing an unpublished library change
 
@@ -86,9 +113,9 @@ npm run test:all
 
 The tests use the bundled QUnit engine and the library's actual result
 collection and rendering code. Browser checks verify messages, source details,
-totals, subsequent tests, and collapse/filter controls. The pending companion change
-also includes a local verifier that calls its real consumer entry points
-against a local library checkout.
+totals, subsequent tests, and collapse/filter controls. The companion
+exception-integration branch also has a local verifier that calls its real
+consumer entry points against a local library checkout.
 
 These checks substitute Apps Script services and do not validate Google's
 deployment, authorization, cache quotas, or runtime scheduling. They provide
