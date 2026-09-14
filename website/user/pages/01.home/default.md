@@ -8,120 +8,75 @@ show_header_image: false
 show_clickthrough: true
 ---
 
-QUnit2GS is a Google Apps Script Library that allows Apps Script projects to be
-tested using the QUnit JavaScript testing framework -
-[qunitjs.com](http://qunitjs.com). Just add this library to your project and
-start writing tests in just a few minutes.
+QUnitGS2 brings [QUnit](https://qunitjs.com/) testing to
+[Google Apps Script](https://developers.google.com/apps-script). Write a small
+test, open a web page, and see whether your code does what you expect.
+No local development tools are required.
 
----
+! **New here?** [Run your first tests with the quick start guide.](/quick-start-guide)
 
-! Just want the code?  [Click here for the quick start guide.](/quick-start-guide)
+## How it works
 
-[QUnitJS](https://qunitjs.com/) is the easy, universal, and extensible way to quickly test Javascript code. It requires little configuration, making it easy to set up and run tests for all sorts of projects.  This website is dedicated to an open-source adaptation of that code to let you test code you write in [Google Apps Script](https://developers.google.com/apps-script).  Turn your small projects into large ones with [the power of unit testing](https://stackoverflow.com/questions/67299/is-unit-testing-worth-the-effort).
+1. Add QUnitGS2 as a library in your Apps Script project.
+2. Add a test runner and tests alongside your server-side JavaScript.
+3. Open the project's web app URL to run the tests and display the results.
 
-## Installation & Usage
-**Summary:**
-1. Add the testing library to your project.
-2. Add the connecting code to your project code.
-3. Deploy as a web app to see test results.
-4. Write tests & enjoy.
+**Your tests run on Google's servers, not in the browser.** The browser displays
+the finished results. Each reload runs the tests again, including any calls that
+write to a spreadsheet, send email, or change files. Start with pure functions
+and use disposable test data when testing Google services.
 
-!!!! You can follow the general instructions belows or, if you're getting stuck, [follow the step-by-step illustrated tutorial](/examples/step-by-step-tutorial).
+## Find the guide you need
 
-### Add the testing library
+| I want to... | Start here |
+| --- | --- |
+| Copy working code and get a green result | [Quick start](/quick-start-guide) |
+| Learn by finding and fixing a bug | [Step-by-step tutorial](/examples/step-by-step-tutorial) |
+| Choose assertions and organize a growing suite | [Write and organize tests](/how-to-guides/writing-tests) |
+| Test spreadsheet logic without touching real data | [Test spreadsheet code](/how-to-guides/testing-spreadsheet-code) |
+| Add tests to a project that already has a web app | [Test an existing project](/how-to-guides/testing-existing-projects) |
+| Fix an empty page, missing tests, or outdated results | [Troubleshooting](/troubleshooting) |
 
-You can either add this library to your project directly by copy-pasting code
-from [the latest version here on Github](https://github.com/artofthesmart/QUnitGS2), or you can add the library directly to
-your project
-([tutorial](https://developers.google.com/apps-script/guides/libraries#using_a_library)).
-Here's the library ID for you to copy/paste if you add it directly:
-`1tXPhZmIyYiA_EMpTRJw0QpVGT5Pdb02PpOHCi9A9FFidblOc9CY_VLgG`
+## Choose where your tests live
 
-### Add the connecting code
+### In the project you are testing
 
-1. Add a `doGet()` function that draws the test results when you request it as a
-   webpage:
-   
-```javascript
-// Alias used by the examples below.
-var QUnit = QUnitGS2.QUnit;
+For a script without an existing web app, keep the code and tests together.
+The [quick start](/quick-start-guide) sets up a `doGet()` function that serves
+the test results.
 
-function doGet() {
-   QUnitGS2.init(); // Initializes the library.
-    
-   /**
-   * Add your test functions here.
-   */
-    
-   QUnit.start(); // Starts running tests, notice QUnit vs QUnitGS2.
-   return QUnitGS2.getHtml();
-}
-```
+![QUnitGS2 and application code in a single test web app.](single_import_test_only.png)
 
-2. Add a `getResultsFromServer()` function that passes results from QUnit to the
-   webpage:
-   
-```javascript
-function getResultsFromServer() {
-   return QUnitGS2.getResultsFromServer();
-}
-```
+### In a separate test project
 
-> You can find [more examples here](http://qunitgs2.com/examples) and in the [QUnitGS2 Test
-> project](http://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit).
+For a published application, a separate runner keeps test endpoints out of the
+production app. Import both QUnitGS2 and your application as libraries, then test
+the application's exported functions.
 
-## Deploy as a web app.
+![A test project imports QUnitGS2 and the application as libraries.](dual_import.png)
 
-Once the code is in your project, you must either
-- deploy a web app of your script so it can render the HTML results of your
-  tests, or
-- write your code so that a different project can be a web app and test your
-  code.
+### Alongside a private web app
 
-[You can learn more about Web Apps
-here](https://developers.google.com/apps-script/guides/web), but basically it
-means allowing your script project to respond to web browser requests with a
-website, data, or (in this situation) test results.
+You can also use one `doGet(e)` router to select the app page or the test page.
+Only do this in a project whose access is restricted to trusted testers: a
+`?page=tests` parameter is not access control.
 
-These are explained below.
+![One web app routes requests to the application or the test results.](single_import_multipage_app.png)
 
-### Option 1: Deploy your code as a web app for testing purposes.
+The [existing-project guide](/how-to-guides/testing-existing-projects) walks
+through both approaches.
 
-The first and easiest option is to import the library and deploy your script as
-as Web App. If your script isn't currently deployed as a web app (and you don't
-expect it to be), this should be your go-to choice.
+## What can I test?
 
-> Note that you can [set permissions on who can load the web
-> app](https://developers.google.com/apps-script/guides/web#permissions) for
-> security.
+QUnitGS2 is a good fit for calculations, validation, data transformations, and
+synchronous Apps Script service calls. Use the
+[QUnit assertion reference](https://api.qunitjs.com/assert/) for assertion details,
+but check that an API exists in your selected library version.
 
-![Use the library by making your script a
-webapp.](single_import_test_only.png)
-
-### Option 2: Testing an already deployed web app.
-
-If your app is already deployed, you have two options for how you can test it.
-You can export functionality from your app and import it into another project
-for testing, or you can have QUnit live alongside your app code.
-
-![Use the library by importing your code and the library into a third testing
-app.](dual_import.png)
-
-The diagram above shows how you can import both QUnit2GS _and_ your project code
-into a third app. That app acts like Option #1 above and helps separate your
-production code from your testing code.
-
-![Use the library by making your script a webapp that has multiple
-pages.](single_import_multipage_app.png)
-
-The diagram above shows how you can have QUnit2GS live alongside your production
-code. The only hitch is that you'll have to write some kind of router based on
-[query string
-parameters](https://developers.google.com/apps-script/guides/web#request_parameters)
-in order to control which page a user sees when loading your application.
-
-[Learn more about writing your own
-router.](https://medium.com/@fro_g/routing-in-javascript-d552ff4d2921)
+It is not a browser automation tool. There is no browser DOM in server-side
+Apps Script, and timers, promises, and asynchronous workflows do not behave like
+they do in browser QUnit. See [runtime limitations](/troubleshooting#runtime-limitations)
+before adapting a browser test suite.
 
 ## Reading test failures
 

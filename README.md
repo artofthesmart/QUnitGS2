@@ -1,6 +1,6 @@
 # QUnitGS2
 
-QUnit2GS is a Google Apps Script Library that allows Apps Script projects to be
+QUnitGS2 is a Google Apps Script Library that allows Apps Script projects to be
 tested using the QUnit JavaScript testing framework -
 [qunitjs.com](http://qunitjs.com). Just add this library to your project and
 start writing tests in just a few minutes.
@@ -16,6 +16,13 @@ The authored Grav website pages are maintained in
 [`website/user/pages`](website/user/pages). Installed themes, plugins,
 configuration, runtime data, and administrator credentials remain outside this
 repository.
+
+Start with the [complete quick start](https://qunitgs2.com/quick-start-guide),
+then use the [how-to guides](https://qunitgs2.com/how-to-guides) for organizing
+tests, testing spreadsheet code, and integrating with existing applications.
+See [troubleshooting](https://qunitgs2.com/troubleshooting) when a run does not
+behave as expected. Website authoring notes are in
+[`website/README.md`](website/README.md).
 
 ## Usage
 
@@ -57,7 +64,7 @@ function getResultsFromServer() {
 }
 ```
 
-> Further examples can be seen on the [QUnitGS2 website](#) and in the [QUnitGS2 Test
+> Further examples can be seen on the [QUnitGS2 website](https://qunitgs2.com/examples) and in the [QUnitGS2 Test
 > project](http://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit).
 
 ## Deploy as a web app.
