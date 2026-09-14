@@ -123,7 +123,8 @@ assertions, including their error messages; subsequent tests continue under
 QUnit's default exception handling.
 
 Local regression tests can be run with `node --test tests/*.test.cjs` on Node.js
-22 or later. See [tests/README.md](tests/README.md) for their scope.
+22 or later. Browser integration tests are also available via
+`npm run test:browser`; see [tests/README.md](tests/README.md) for setup and scope.
 
 Asynchronous testing is limited. There is no `setTimeout()` function in Google
 Apps Script. If you create time-based triggers via the [Script
