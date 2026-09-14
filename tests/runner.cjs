@@ -2,11 +2,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { createHtmlService } = require('./html-service.cjs');
 
-function runSuite(source) {
+function createLibrary() {
   const cache = new Map();
   const context = vm.createContext({
-    HtmlService: {},
+    HtmlService: createHtmlService(name => context._include(name)),
+    ScriptApp: { getService: () => ({ getUrl: () => 'https://qunitgs2.test/' }) },
     CacheService: {
       getUserCache: () => ({
         get: key => cache.get(key) ?? null,
@@ -21,6 +23,11 @@ function runSuite(source) {
       timeout: 5000
     });
   }
+  return context;
+}
+
+function runSuite(source) {
+  const context = createLibrary();
   vm.runInContext(`init(); ${source}
     QUnit.test('subsequent test', function(assert) { assert.ok(true); });
     QUnit.start();`, context, { filename: 'suite.gs', timeout: 5000 });
@@ -34,6 +41,11 @@ function runSuite(source) {
   assert.equal(new Set(tests.map(item => item.id)).size, tests.length, 'each test has its own result');
   for (const test of tests) {
     assert.equal(test.results.total, test.assertions.length, 'all assertions are recorded');
+    assert.deepEqual(test.results.assertions, test.assertions.map(item => {
+      const assertion = { result: Boolean(item.result) };
+      if (Object.hasOwn(item, 'message')) assertion.message = item.message;
+      return assertion;
+    }), 'test summaries preserve assertion outcomes and messages');
     assert.equal(test.results.failed, test.assertions.filter(item => !item.result).length);
     assert.equal(test.results.passed, test.assertions.filter(item => item.result).length);
   }
@@ -41,7 +53,7 @@ function runSuite(source) {
   for (const key of ['total', 'passed', 'failed']) {
     assert.equal(summary[key], tests.reduce((sum, test) => sum + test.results[key], 0));
   }
-  return { tests, summary, resultsString };
+  return { tests, summary, resultsString, html: context.getHtml().getContent() };
 }
 
-module.exports = { runSuite };
+module.exports = { createLibrary, runSuite };

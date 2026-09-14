@@ -1,27 +1,15 @@
-const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { test, expect } = require('@playwright/test');
 
 async function renderSuite(page, source) {
   // Keep Playwright's stack formatter out of QUnit's stack-source detection.
-  const { tests, summary, resultsString } = JSON.parse(execFileSync(process.execPath, [
+  const { tests, summary, resultsString, html } = JSON.parse(execFileSync(process.execPath, [
     '-e',
     `const { runSuite } = require(process.argv[1]);
      process.stdout.write(JSON.stringify(runSuite(require('node:fs').readFileSync(0, 'utf8'))));`,
     path.join(__dirname, 'runner.cjs')
   ], { input: source, encoding: 'utf8', timeout: 10000 }));
-  const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
-  const toolbar = read('qunit-toolbar.html')
-    .replace('<?= testUrl ?>', '/')
-    .replace('<?!= checked ?>', '')
-    .replace('<?!= urlConfigs ?>', '');
-  const html = read('index.html')
-    .replace('<?!= styles ?>', '')
-    .replace('<?= testUrl ?>', '/')
-    .replace('<?= title ?>', 'QUnitGS2 regression tests')
-    .replace('<?!= toolbar ?>', toolbar)
-    .replace("<?!= _include('qunit.js') ?>", () => read('qunit.js.html'));
   expect(html).not.toContain('<?');
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -35,10 +23,9 @@ async function renderSuite(page, source) {
     };
     window.google = { script: { run: bridge } };
   }, resultsString);
-  await page.route('https://qunitgs2.test/', route => route.fulfill({
-    contentType: 'text/html',
-    body: html
-  }));
+  await page.route('**/*', route => route.request().url() === 'https://qunitgs2.test/'
+    ? route.fulfill({ contentType: 'text/html', body: html })
+    : route.abort());
   await page.goto('https://qunitgs2.test/');
   await expect(page.locator('#qunit-total')).toHaveText(String(summary.total));
   await expect(page.locator('#qunit-passed')).toHaveText(String(summary.passed));
@@ -99,10 +86,11 @@ test('preserves numeric comparisons and failed throws assertion messages', async
       assert.equal(3, 2, 'numeric failure');
       assert.throws(function() {}, /expected/, 'missing exception');
       assert.throws(function() { throw new Error('wrong'); }, /expected/, 'wrong exception');
+      assert.equal(4, 2);
     });
   `);
   await expect(page.locator('#qunit-test-block1 .test-message')).toHaveText([
-    'numeric failure', 'missing exception', 'wrong exception'
+    'numeric failure', 'missing exception', 'wrong exception', 'failed'
   ]);
   await expect(page.locator('#qunit-test-block1 .test-diff').first()).toContainText('+1');
 });
