@@ -12,25 +12,41 @@ Read more detailed usage instructions and see examples at
 
 ## Developing and testing
 
-The live test project now lives in [`tests/live`](tests/live), alongside the
-library it tests. After the [one-time setup](tests/live/README.md#one-time-setup),
-run:
+**Start with local tests.** Use Node.js 22 or newer and run these commands from
+the repository root (the directory containing `package.json`):
+
+```sh
+npm ci
+npm test
+```
+
+These checks need no Google account and do not deploy anything. For the complete
+local suite, including browser checks:
+
+```sh
+npx playwright install chromium
+npm run test:all
+```
+
+**To test on Google's servers**, first follow the
+[live-test setup guide](tests/live/README.md#one-time-setup). It covers installing
+wget, signing into clasp, choosing a test project, and creating
+`.live-test.json` in this checkout's repository root. Then run:
 
 ```sh
 npm run test:live
 ```
 
-Or run `bash scripts/test-live.sh` directly. This builds the current library and
-test sources, pushes only to the configured test project with clasp, updates its
-web-app deployment, and retrieves JSON results with wget. The command exits
-nonzero on test failures, deployment/network errors, or missing/stale results.
-It does not publish a new version of the library.
+The live command builds, pushes, redeploys, and fetches test results. It changes
+the configured test project, **not the published library**.
 
-Use Node.js 22 or newer and `npm ci` to install the development dependencies.
-`npm test` runs offline regressions; `npm run test:all` also runs the existing
-Chromium checks (see [`tests`](tests) for browser setup). `npm run build`
-generates the standalone test project under `dist/live` without contacting
-Google. See [`scripts`](scripts) for the build/deployment boundary.
+**A clone or merge does not supply `.live-test.json`.** It is intentionally
+ignored by Git and must be created in each checkout or worktree; clasp login is
+separate. The guide includes the exact copy command, an example with the shared
+test project's IDs, and troubleshooting for a missing configuration file.
+
+See the [testing guide](tests/README.md) for command choices and coverage,
+[`tests/live`](tests/live) for live cases, and [`scripts`](scripts) for tooling.
 
 ## Website
 

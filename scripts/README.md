@@ -1,5 +1,10 @@
 # Build and live-test tooling
 
+For a step-by-step process, start with the
+[live-test setup guide](../tests/live/README.md#one-time-setup). Run its commands
+from the repository root; `.live-test.json` belongs there, not in this directory.
+That ignored file must be created separately in each checkout.
+
 `build.mjs` assembles the root library, HTML templates, and `tests/live` into one
 Apps Script project in `dist/live`. It preserves source contents, orders the
 server code in a single bundle, retains the license notices, and hashes all

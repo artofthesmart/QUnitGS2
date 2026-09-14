@@ -1,8 +1,36 @@
-# Regression tests
+# Testing guide
 
-Run `npm test` with Node.js 22 or later. The Node regression tests require no
-installed packages. `node --test tests/*.test.cjs` runs just the original
-collection, HTML, and documentation tests.
+## Start here
+
+Use Node.js 22 or later. Run commands from the **repository root**, where
+`package.json` lives, not from `tests/` or `scripts/`.
+
+```sh
+npm ci
+npm test
+```
+
+This is the safe starting point: no Google login, deployment configuration, or
+remote project is needed. Installing dependencies prepares the browser and live
+tools too; the Node tests themselves use only built-in Node modules.
+
+| Command | What it does | Changes a Google project? |
+| --- | --- | --- |
+| `npm test` | Runs Node regressions, including simulated deployment workflows | No |
+| `npm run test:browser` | Runs Chromium checks after [browser setup](#browser-integration-tests) | No |
+| `npm run test:all` | Runs both local suites, as CI does | No |
+| `npm run build` | Writes the standalone test project to ignored `dist/live` | No |
+| `npm run test:live` | Builds, pushes, redeploys, and fetches real Google results | **Yes: the configured test project** |
+
+For live testing, complete the [numbered setup](live/README.md#one-time-setup)
+first. In particular, `.live-test.json` must exist at the root of **this
+checkout**. It is ignored by Git, so another checkout's successful run or a
+merged PR does not configure this one.
+
+## What the tests cover
+
+`node --test tests/*.test.cjs` runs just the top-level collection, HTML,
+documentation, and result-state tests.
 
 `live/` owns the consolidated Apps Script test project and imported QUnit cases.
 `local/` adds offline build, run/result protocol, and clasp/wget workflow
