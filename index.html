@@ -4,17 +4,23 @@
     <style>
     #qunit-tests li li.fail {
       white-space: normal; /* Needed to keep the "failed" on the same line in the assert list */
-    }  
-    </style  
+    }
+    #qunit-banner.qunit-neutral { background-color: #d2e0e6; }
+    #qunit-banner.qunit-incomplete,
+    #qunit-tests .incomplete { background-color: #fff3cd; color: #493b00; }
+    #qunit-banner.qunit-error { background-color: #b33; }
+    #qunit-result-status { white-space: pre-wrap; }
+    </style>
   </head>
   <body>
-    <div id="qunit">
+    <div id="qunit" data-result-state="loading">
       <h1 id="qunit-header"><span id="qunit-title-cross"></span>&nbsp<a href="<?= testUrl ?>"><?= title ?></a></h1>
-      <h2 id="qunit-banner" class="qunit-pass"></h2>
+      <h2 id="qunit-banner" class="qunit-neutral"></h2>
       <?!= toolbar ?>
       <h2 id="qunit-userAgent"></h2>
       <div id="qunit-testresult" class="result p">
-        <div id="qunit-testresult-display">
+        <div id="qunit-result-status" role="status" aria-live="polite">Loading test results...</div>
+        <div id="qunit-testresult-display" hidden>
           Tests completed in <span id='qunit-runtime'></span> milliseconds.<br/>
           <span id='qunit-passed' class='passed'></span> assertions of <span id='qunit-total' class='total'></span> passed,
           <span id='qunit-failed' class='failed'></span> failed.
@@ -32,6 +38,7 @@
         <span id="qunit-test-banner" class="test-name"></span>
         <b class="counts">(<b class="failed" id="qunit-test-failed"></b>, <b class="passed" id="qunit-test-passed"></b>, <span id="qunit-test-total"></span>)</b>
         <span class="runtime" id="qunit-test-runtime"></span>
+        <span class="qunit-test-status"></span>
         <ol id="qunit-test-block" class="qunit-assert-list"></ol>
       </li>
     </div>
