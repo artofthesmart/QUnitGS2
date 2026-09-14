@@ -144,7 +144,9 @@ function init() {
     
       if (type === 'TESTS_RESULTS_ASSERT') {
       
-        details.expected = typeof details.expected === 'object' ? QUnit.dump.parse(details.expected) : details.expected
+        if (Object.prototype.hasOwnProperty.call(details, 'expected')) {
+          details.expected = typeof details.expected === 'object' ? QUnit.dump.parse(details.expected) : details.expected
+        }
         details.actual = typeof details.actual === 'object' ? QUnit.dump.parse(details.actual) : details.actual
         details.diff = getDiff()
         getTest(details.testId).value.assertions.push(details)
@@ -171,6 +173,9 @@ function init() {
       
         var diff
         var showDiff
+
+        // Exception failures have no expected value to compare.
+        if (!Object.prototype.hasOwnProperty.call(details, 'expected')) return ''
         
         if (typeof details.actual === "number" && typeof details.expected === "number") {
         
@@ -183,10 +188,12 @@ function init() {
           
         } else if (typeof details.actual !== "boolean" && typeof details.expected !== "boolean") {
         
-          diff = QUnit.diff(details.expected, details.actual)
+          var expected = String(details.expected)
+          var actual = String(details.actual)
+          diff = QUnit.diff(expected, actual)
           
           // don't show diff if there is zero overlap
-          showDiff = stripHtml(diff).length !== stripHtml(details.expected).length + stripHtml(details.actual).length;
+          showDiff = stripHtml(diff).length !== stripHtml(expected).length + stripHtml(actual).length;
         }        
         
         return (showDiff) ? diff : ''

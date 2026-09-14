@@ -118,6 +118,13 @@ The GUI is not displayed immediately, but rather only after the tests have run.
 Tests are run on Google's servers, not in your browser. The browser only
 displays test results.
 
+Uncaught test and setup/teardown hook exceptions are reported as failed
+assertions, including their error messages; subsequent tests continue under
+QUnit's default exception handling.
+
+Local regression tests can be run with `node --test tests/*.test.cjs` on Node.js
+22 or later. See [tests/README.md](tests/README.md) for their scope.
+
 Asynchronous testing is limited. There is no `setTimeout()` function in Google
 Apps Script. If you create time-based triggers via the [Script
 service](https://developers.google.com/apps-script/reference/script), the
