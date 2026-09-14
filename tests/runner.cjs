@@ -4,8 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { createHtmlService } = require('./html-service.cjs');
 
-function createLibrary() {
-  const cache = new Map();
+function createLibrary(cache = new Map()) {
   const context = vm.createContext({
     HtmlService: createHtmlService(name => context._include(name)),
     ScriptApp: { getService: () => ({ getUrl: () => 'https://qunitgs2.test/' }) },

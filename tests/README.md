@@ -1,6 +1,15 @@
 # Regression tests
 
-Run `node --test tests/*.test.cjs` with Node.js 22 or later. No packages are required.
+Run `npm test` with Node.js 22 or later. The Node regression tests require no
+installed packages. `node --test tests/*.test.cjs` runs just the original
+collection, HTML, and documentation tests.
+
+`live/` owns the consolidated Apps Script test project and imported QUnit cases.
+`local/` adds offline build, run/result protocol, and clasp/wget workflow
+regressions using service and command doubles. It also tests the unmodified
+production cache path, including its known oversized-report error, separately
+from the live project's chunked adapter. See [live setup](live/README.md)
+for the separate `npm run test:live` command; it is never run by offline CI.
 
 The collection tests load the bundled QUnit engine and Apps Script wrapper in an
 isolated VM with an in-memory CacheService substitute. Every suite must finish,
@@ -38,10 +47,13 @@ The browser checks cover visible exception messages, literal message text,
 stack traces, hook failures, subsequent tests, totals, and existing collapse and
 filter class toggles. They do not validate the external stylesheet's appearance.
 
-Neither suite simulates Google's deployment, library binding, cache quotas, or
-runtime scheduling. Deployed Apps Script smoke tests in
-[QUnitGS2-Test](https://github.com/artofthesmart/QUnitGS2-Test) are still needed
-for those boundaries.
+Neither the original collection nor browser suite simulates Google's deployment,
+library binding, cache quotas, or runtime scheduling. The new `local/` tests
+model cache-entry limits and Promise scheduling but still substitute Google
+services. Deployed [live tests](live/README.md) are needed for those boundaries.
+The pending opt-in exception suite and verifier in
+[artofthesmart/QUnitGS2-Test#4](https://github.com/artofthesmart/QUnitGS2-Test/pull/4)
+have not been imported; `?suite=exceptions` is not supported by this live runner.
 
 GitHub Actions runs `npm run test:all` on Node.js 22 and 24 for pull requests and
 pushes to master. Passing local or CI checks does not publish the library or
