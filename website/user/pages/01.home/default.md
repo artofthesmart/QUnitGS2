@@ -43,7 +43,7 @@ Here's the library ID for you to copy/paste if you add it directly:
    webpage:
    
 ```javascript
-// Optional for easier use.
+// Alias used by the examples below.
 var QUnit = QUnitGS2.QUnit;
 
 function doGet() {
@@ -122,3 +122,17 @@ in order to control which page a user sees when loading your application.
 
 [Learn more about writing your own
 router.](https://medium.com/@fro_g/routing-in-javascript-d552ff4d2921)
+
+## Reading test failures
+
+With QUnit's default exception handling, an uncaught exception in a test or in a
+`before`, `beforeEach`, `afterEach`, or `after` hook is reported as a failed
+assertion. The results page shows the failure message and available source
+details, and subsequent tests continue. Use `assert.throws` when an exception
+is the expected behavior.
+
+Earlier library versions could lose these failures while generating a diff.
+Select a published library version containing the fix, or use the updated
+source. Updating this repository or your web app alone does not update a pinned
+library version. See the [changelog](https://github.com/artofthesmart/QUnitGS2/blob/master/CHANGELOG.md)
+and [test suite guide](/examples/qunitgs2-test-suite) for details.

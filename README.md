@@ -5,6 +5,8 @@ tested using the QUnit JavaScript testing framework -
 [qunitjs.com](http://qunitjs.com). Just add this library to your project and
 start writing tests in just a few minutes.
 
+See [CHANGELOG.md](CHANGELOG.md) for notable changes.
+
 Read more detailed usage instructions and see examples at
 [QUnitGS2.com](https://qunitgs2.com).
 
@@ -37,6 +39,8 @@ Here's the library ID for you to copy/paste if you add it directly:
 1. Add a `doGet()` function that draws the test results when you request it as a
    webpage:
 ```javascript
+var QUnit = QUnitGS2.QUnit;
+
 function doGet() {
    QUnitGS2.init();
    userDefinedtestFunctions();
@@ -124,6 +128,18 @@ The GUI is not displayed immediately, but rather only after the tests have run.
 
 Tests are run on Google's servers, not in your browser. The browser only
 displays test results.
+
+Uncaught test and setup/teardown hook exceptions are reported as failed
+assertions, including their error messages; subsequent tests continue under
+QUnit's default exception handling.
+
+If an older library version still loses failures, select a published version
+containing the fix or use the updated source. A repository update does not
+change the library version selected in your Apps Script project.
+
+Local regression tests can be run with `node --test tests/*.test.cjs` on Node.js
+22 or later. Browser integration tests are also available via
+`npm run test:browser`; see [tests/README.md](tests/README.md) for setup and scope.
 
 Asynchronous testing is limited. There is no `setTimeout()` function in Google
 Apps Script. If you create time-based triggers via the [Script

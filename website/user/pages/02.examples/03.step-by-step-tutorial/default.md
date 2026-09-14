@@ -41,8 +41,8 @@ Give it a name, and click `OK`.
 Now copy the code below and paste it into the new `Tests.gs` file.  This code is important. If you want to know more about what it does, read the full guide on the home page.
 
 ```javascript
-// Optional for easier use.
-var Qunit = QUnitGS2.QUnit;
+// Alias used by the examples below.
+var QUnit = QUnitGS2.QUnit;
 
 // HTML get function
 function doGet() {
@@ -52,7 +52,7 @@ function doGet() {
    * Add your test functions here.
    */
 
-   Qunit.start();
+   QUnit.start();
    return QUnitGS2.getHtml();
 }
 
@@ -133,4 +133,16 @@ Now if you reload the tests page, you’ll find that both tests pass!
 
 We did it!  Using unit testing, we found a bug in our code and fixed it so that all tests pass.  Now we’ll feel confident adding to this code or editing it, knowing that if we ever cause a breakage somewhere, it’ll appear in our tests.
 
+## When a test throws an exception
 
+With QUnit's default exception handling, unexpected exceptions in tests and
+setup/teardown hooks appear as failed assertions with their messages. Subsequent
+tests continue. Use `assert.throws` to test a function that is supposed to throw;
+do not wrap an unexpected exception in a catch block just to keep the test
+results visible.
+
+Older QUnitGS2 library versions could lose tests that threw exceptions. To get
+the fix, select a published library version containing it or use the updated
+source. The consumer web app's latest-code URL does not override its selected
+library version. See the [test suite guide](/examples/qunitgs2-test-suite) for
+the exception regression suite and expected results.
