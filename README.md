@@ -10,6 +10,28 @@ See [CHANGELOG.md](CHANGELOG.md) for notable changes.
 Read more detailed usage instructions and see examples at
 [QUnitGS2.com](https://qunitgs2.com).
 
+## Developing and testing
+
+The live test project now lives in [`tests/live`](tests/live), alongside the
+library it tests. After the [one-time setup](tests/live/README.md#one-time-setup),
+run:
+
+```sh
+npm run test:live
+```
+
+Or run `bash scripts/test-live.sh` directly. This builds the current library and
+test sources, pushes only to the configured test project with clasp, updates its
+web-app deployment, and retrieves JSON results with wget. The command exits
+nonzero on test failures, deployment/network errors, or missing/stale results.
+It does not publish a new version of the library.
+
+Use Node.js 22 or newer and `npm ci` to install the development dependencies.
+`npm test` runs offline regressions; `npm run test:all` also runs the existing
+Chromium checks (see [`tests`](tests) for browser setup). `npm run build`
+generates the standalone test project under `dist/live` without contacting
+Google. See [`scripts`](scripts) for the build/deployment boundary.
+
 ## Website
 
 The authored Grav website pages are maintained in
@@ -64,8 +86,9 @@ function getResultsFromServer() {
 }
 ```
 
-> Further examples can be seen on the [QUnitGS2 website](https://qunitgs2.com/examples) and in the [QUnitGS2 Test
-> project](http://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit).
+> Further examples can be seen on the [QUnitGS2 website](https://qunitgs2.com/examples),
+> in the [live test sources](tests/live), and in the
+> [Apps Script test project](https://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit).
 
 ## Deploy as a web app.
 

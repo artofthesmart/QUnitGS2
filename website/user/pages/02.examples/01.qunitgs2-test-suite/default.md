@@ -8,7 +8,7 @@ show_header_image: false
 show_clickthrough: true
 ---
 
-The [QUnitGS2-Test source](https://github.com/artofthesmart/QUnitGS2-Test) and
+The [consolidated live test source](https://github.com/artofthesmart/QUnitGS2/tree/master/tests/live) and
 [Apps Script test project](https://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit)
 provide a larger example based on tests from the original QUnit library. Use
 them as a reference after you have a [small runner working](/quick-start-guide).
@@ -48,15 +48,26 @@ If the shared project or hosted deployment is unavailable, you can still use the
 self-contained [quick start](/quick-start-guide) and
 [tutorial](/examples/step-by-step-tutorial); neither depends on that deployment.
 
+## One-command live testing
+
+The test sources now live alongside the library in `tests/live`. After the
+[one-time clasp and web-app setup](https://github.com/artofthesmart/QUnitGS2/blob/master/tests/live/README.md),
+run `npm run test:live` to build the current sources, push only to the test
+project, redeploy, and retrieve correlated JSON results with wget.
+The automated suite excludes intentional failures and unsupported asynchronous
+suites. On an updated deployment, `?demo=failures` enables the failure examples.
+The published library deployment is not changed.
+
 ## Exception reporting regressions
 
 The opt-in `?suite=exceptions` route is implemented in
 [artofthesmart/QUnitGS2-Test#4](https://github.com/artofthesmart/QUnitGS2-Test/pull/4),
 which is not yet merged into the companion repository's `master` branch.
 Use a test project containing that PR's source and a QUnitGS2 library version
-with the exception-reporting fixes. A runner copied from companion `master`
-does not include this route yet, and the historical hosted deployment should
-not be assumed to support it. The default suite is unchanged.
+with the exception-reporting fixes. Neither a runner copied from companion
+`master` nor this repository's consolidated live runner includes that route.
+The hosted deployment should not be assumed to support it. That companion
+change leaves its default suite unchanged.
 
 The regression suite intentionally throws strings and `Error` objects before
 and after assertions and in all four setup/teardown hooks. It also tests

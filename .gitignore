@@ -6,3 +6,9 @@ playwright-report/
 /website/user/*
 !/website/user/pages/
 !/website/user/pages/**
+
+/dist/
+/.live-test.json
+/.live-test.lock/
+/.clasp.json
+.clasprc*.json
