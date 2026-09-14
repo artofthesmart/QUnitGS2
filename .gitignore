@@ -1,3 +1,8 @@
 node_modules/
 test-results/
 playwright-report/
+
+# Only authored website pages belong in this repository.
+/website/user/*
+!/website/user/pages/
+!/website/user/pages/**
