@@ -9,9 +9,15 @@ matching the individual test records. Cases cover test/hook exceptions,
 assert.throws, QUnit-generated failures, and the comparison value types affected
 by diff normalization.
 
-Documentation tests execute the README, website home/quick-start connecting
-code, and both stages of the tutorial with their real example snippets. HTML
-tests exercise `getHtml()` and its configuration/template bindings.
+Documentation tests follow the homepage to the complete quick start and execute
+the README runner, the failing/fixed/extended tutorial, and the how-to examples
+in separate consumer and library VMs. They check exact test/assertion counts,
+module filtering, spreadsheet adapters, private routing, and the public result
+bridge. They also check local Grav page links, heading anchors, media, and basic
+page structure without installing Grav. Run just these checks with
+`node --test tests/documentation.test.cjs`.
+
+HTML tests exercise `getHtml()` and its configuration/template bindings.
 
 ## Browser integration tests
 
