@@ -15,6 +15,11 @@
       addEvent(filter, "change", applyFilter)
       applyFilter()
 
+      var embedded = id("qunit-embedded-results")
+      if (embedded) {
+        onSuccess(embedded.textContent)
+        return
+      }
       google.script.run
         .withSuccessHandler(onSuccess)
         .withFailureHandler(onError)

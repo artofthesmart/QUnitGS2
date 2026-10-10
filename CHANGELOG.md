@@ -2,6 +2,21 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Bridge-free synchronous HTML reports - 2026-10-10
+
+- Added `run(registerTests)` to initialize, run synchronous tests, and return
+  self-contained HTML with completed results (#4). The consumer no longer needs
+  `getResultsFromServer()` when using this opt-in API.
+- Keep report data in memory rather than the user cache, embed it with
+  script-safe escaping, and render it without a browser RPC. The legacy
+  cached-result runner and bridge remain supported.
+- Reuse the synchronous task adapter while retaining normal exception-to-
+  assertion behavior. Reject asynchronous tests/hooks/callbacks explicitly,
+  restore the original cache handle on errors, and never return an unfinished
+  report as success.
+- Added consumer, encoding, size, error, compatibility, and Chromium regressions.
+  Apps Script execution/response limits still apply; publication and live
+  deployment remain separate.
 ## Synchronous no-try/catch debugging - 2026-10-10
 
 - Made `QUnit.config.notrycatch = true` after initialization use a synchronous

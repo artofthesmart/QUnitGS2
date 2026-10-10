@@ -11,10 +11,24 @@ function collectSuite(source) {
   ], { input: source, encoding: 'utf8', timeout: 10000 }));
 }
 
+function collectBridgeFree(source) {
+  return JSON.parse(execFileSync(process.execPath, [
+    '-e',
+    `const vm = require('node:vm');
+     const { createLibrary } = require(process.argv[1]);
+     const library = createLibrary();
+     const source = require('node:fs').readFileSync(0, 'utf8');
+     const output = vm.runInContext('run(function() {' + source + '\\n})', library, { timeout: 10000 });
+     process.stdout.write(JSON.stringify({ html: output.getContent() }));`,
+    path.join(__dirname, 'runner.cjs')
+  ], { input: source, encoding: 'utf8', timeout: 15000 }));
+}
+
 async function openResults(page, suite, { delivery = 'success', error = 'Bridge failed' } = {}) {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.addInitScript(({ results, delivery, error }) => {
+    if (delivery === 'absent') return;
     const bridge = {
       withSuccessHandler(callback) { this.success = callback; return this; },
       withFailureHandler(callback) { this.failure = callback; return this; },
@@ -34,4 +48,4 @@ async function openResults(page, suite, { delivery = 'success', error = 'Bridge 
   return errors;
 }
 
-module.exports = { collectSuite, openResults };
+module.exports = { collectSuite, collectBridgeFree, openResults };

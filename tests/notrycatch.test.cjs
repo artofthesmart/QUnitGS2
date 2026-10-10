@@ -103,7 +103,7 @@ for (const source of [
     const library = createLibrary();
     vm.runInContext(`init(); QUnit.config.notrycatch = true; ${source}`, library);
     assert.throws(() => vm.runInContext('QUnit.start();', library),
-      /notrycatch debugging.*(synchronous|asynchronous)/);
+      /synchronous runs require synchronous/);
     const records = JSON.parse(library.getResultsFromServer()) || [];
     assert.equal(records.some(record => record.type === 'TESTS_RESULTS_ALL'), false);
   });

@@ -106,6 +106,47 @@ function getResultsFromServer() {
 > in the [live test sources](tests/live), and in the
 > [Apps Script test project](https://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit).
 
+### HTML results without a browser bridge
+
+For synchronous tests, use `QUnitGS2.run(registerTests)` to return a complete
+HTML report from `doGet()`:
+
+```javascript
+var QUnit = QUnitGS2.QUnit;
+
+function doGet() {
+   return QUnitGS2.run(registerTests);
+}
+
+function registerTests() {
+   QUnit.module("Math");
+   QUnit.test("addition", function(assert) {
+      assert.strictEqual(1 + 1, 2, "adds two numbers");
+   });
+}
+```
+
+No `getResultsFromServer()` bridge is needed. `run()` initializes the wrapper,
+calls your registration function, starts QUnit synchronously, and embeds the
+completed JSON in the returned HTML. Do not call `init()`, `QUnit.start()`, or
+`getHtml()` yourself inside the registration function. Configuration such as
+`QUnit.config.title` can be set there before registering tests.
+
+Results stay in memory and are not written to the shared user cache. The page
+renders its embedded results without a `google.script.run` call, so a later
+cache eviction or overlapping run cannot replace that page's results.
+Normal exceptions still become failing assertions and subsequent tests run.
+
+This mode supports synchronous registration, tests, hooks, and logging callbacks
+only. `assert.async()` and returned promises/thenables fail explicitly instead
+of returning a misleading completed page. Do not schedule timer callbacks or
+external asynchronous work. Apps Script execution and HTML response limits still
+apply. Use a fresh execution for each run.
+
+The older `init()`/`start()`/`getHtml()` runner remains supported and still needs
+its result bridge. This new API requires a published library version containing
+it or the updated source.
+
 ### Run tests from the editor
 
 To see results without deploying a web app, add this function and run `runTests`

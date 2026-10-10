@@ -130,6 +130,8 @@ function init(options) {
   
   QUnit.config.autostart = false;
   QUnit.config.gsSynchronousDebug = true;
+  QUnit.config.gsSynchronousRun = false;
+  QUnit.config.gsSynchronousError = undefined;
   
   QUnit.config.storage = {
     store: {},
@@ -340,9 +342,14 @@ function init(options) {
  * </pre>
  */
 
-function getHtml() {
+function getHtml(resultsJson) {
   
   var mainTemplate = HtmlService.createTemplateFromFile( "index" );
+  mainTemplate.embeddedResults = resultsJson === undefined ? '' :
+    '<script type="application/json" id="qunit-embedded-results">' +
+    resultsJson.replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+      .replace(/&/g, '\\u0026').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029') +
+    '</script>';
   mainTemplate.title = QUnit.config.title ? QUnit.config.title :
     "QUnit v" + QUnit.version + " for Google Apps Script";
   
@@ -375,6 +382,44 @@ function getHtml() {
 } // getHtml() 
 
 /**
+ * Run synchronous tests and return a self-contained HTML report.
+ * Usage: function doGet() { return QUnitGS2.run(registerTests); }
+ * No browser result bridge or result-cache writes are required.
+ */
+function run(registerTests) {
+  if (typeof registerTests !== 'function') {
+    throw new TypeError('QUnitGS2.run requires a test registration function');
+  }
+  var originalCache = CACHE_;
+  var results = null;
+  CACHE_ = {
+    get: function() { return results; },
+    put: function(key, value) { results = value; },
+    remove: function() { results = null; }
+  };
+  try {
+    init();
+    QUnit.config.gsSynchronousRun = true;
+    var registration = registerTests();
+    if (registration != null && typeof registration.then === 'function') {
+      throw new Error('QUnitGS2.run requires synchronous test registration');
+    }
+    QUnit.start();
+    if (QUnit.config.gsSynchronousError) throw QUnit.config.gsSynchronousError;
+    var json = getResultsFromServer();
+    if (json === null || !JSON.parse(json).some(function(record) {
+      return record.type === 'TESTS_RESULTS_ALL';
+    })) {
+      throw new Error('QUnitGS2.run did not produce a completed report');
+    }
+    return getHtml(json);
+  } finally {
+    QUnit.config.gsSynchronousRun = false;
+    CACHE_ = originalCache;
+  }
+}
+
+/**
  * <pre>
  * Called by a function in the test project of the same name to get the results
  * from the cache once the tests have completed
@@ -393,6 +438,7 @@ function getResultsFromServer() {
 
 // Keep small reports readable; gzip only near the cache's per-value limit.
 function encodeResultCache_(json) {
+  if (QUnit.config.gsSynchronousRun) return json;
   var byteLength = resultCacheByteLength_(json);
   if (byteLength <= 80000) return json;
   var compressed = 'QUNITGS2:GZIP:1:' +
