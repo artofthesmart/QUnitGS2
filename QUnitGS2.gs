@@ -182,7 +182,8 @@ function init(options) {
       if (!details.result && details.source) assertion.source = details.source;
       report('Assertion', assertion);
     }
-    if (cacheResults) push('TESTS_RESULTS_ASSERT', details);
+    // QUnit sends this same object to later logging callbacks.
+    if (cacheResults) push('TESTS_RESULTS_ASSERT', Object.assign({}, details));
   }
 
   function report(label, details) {

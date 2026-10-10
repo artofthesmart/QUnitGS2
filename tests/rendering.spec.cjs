@@ -131,3 +131,16 @@ test('renders a procedure helper failure and subsequent fresh-fixture results', 
   await expect(page.locator('#qunit-test-output1')).toHaveClass('fail');
   await expect(page.locator('#qunit-test-output2')).toHaveClass('pass');
 });
+
+for (const [file, entry, total] of [
+  ['tests/live/test/main/modules.gs', 'modules', 71],
+  ['tests/live/test/main/assert/step.gs', 'step', 40]
+]) {
+  test(`renders completed ${entry} suite totals rather than an empty banner`, async ({ page }) => {
+    const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+    const { summary } = await renderSuite(page, `${source}\n${entry}();`);
+    expect(summary.total).toBe(total); // Includes the harness's subsequent test.
+    expect(summary.failed).toBe(0);
+    await expect(page.locator('#qunit-title-cross')).toHaveText(String.fromCodePoint(0x2714));
+  });
+}

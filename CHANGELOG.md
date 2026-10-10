@@ -2,6 +2,18 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Module and step completion coverage - 2026-10-10
+
+- Fixed assertion collection mutating the objects passed to later QUnit logging
+  callbacks. Serialization now uses a shallow copy, preserving raw expected and
+  actual values and fixing the imported step value-reference regression.
+- Enabled the imported module and step suites in the live runner (#5), raising
+  the default assertion total from 327 to 436. Local completion, cross-request,
+  and browser-banner regressions verify these suites finish with accurate totals.
+- This verifies completion with the current shim, including its immediate
+  callback/hook cases; it does not add real browser timers or support arbitrary
+  asynchronous work. Deployed Apps Script behavior remains a separate check.
+
 ## QUnit alias and version clarity - 2026-10-10
 
 - Fixed the default HTML/page title to reflect `QUnit.version` instead of the
