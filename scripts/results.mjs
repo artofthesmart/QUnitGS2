@@ -25,7 +25,7 @@ export function validateResponse(response, buildId, runId) {
     throw new Error(`Test endpoint error: ${response.error}`);
   }
   if (response.status === "running" || response.status === "pending") {
-    return response.status;
+    throw new Error("The live endpoint did not complete within the run request. No background run is supported; check Apps Script Executions.");
   }
   if (response.status !== "complete" ||
       !countsAreValid(response.summary) || response.summary.total === 0 ||

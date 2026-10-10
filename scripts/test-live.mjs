@@ -29,17 +29,15 @@ export function command(executable, args, options = {}) {
 }
 
 export async function fetchResults(url, buildId, runId, fetch, pause = setTimeout) {
-  let action = "run";
   for (let attempt = 0; attempt < 12; attempt++) {
     const request = new URL(url);
-    request.search = new URLSearchParams({ format: "json", action, buildId, runId }).toString();
+    request.search = new URLSearchParams({ format: "json", action: "run", buildId, runId }).toString();
     const response = parseResponse(await fetch(request.href));
     const status = validateResponse(response, buildId, runId);
     if (status === "complete") return response;
-    if (status !== "stale") action = "results";
     await pause(5000);
   }
-  throw new Error("Timed out waiting for this build's completed results. Check Apps Script Executions for errors; cached results may also have expired or been evicted.");
+  throw new Error("Timed out waiting for this build to deploy. Check the configured deployment and Apps Script Executions.");
 }
 
 async function main() {

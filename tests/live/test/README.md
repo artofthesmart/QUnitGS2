@@ -7,3 +7,8 @@ The adjacent `../LICENSE` and `../README.md` record licensing and provenance.
 The entry point in `../Code.gs`, not file placement, decides which suites run.
 New live cases belong here; register their functions in `runLiveTests_`.
 Do not add shell tooling or Node-only tests to this directory.
+
+The deployed runner selects `modules({ synchronousOnly: true })`, excluding the
+three async module cases without deleting them. The default `modules()` function
+still registers every case for offline shim coverage. New deployed cases must
+finish synchronously; `assert.async()` or returned promises are errors.

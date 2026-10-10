@@ -1,4 +1,4 @@
-function modules() {
+function modules(options) {
 
   QUnit.module( "before/beforeEach/afterEach/after", {
       before: function() {
@@ -123,54 +123,56 @@ function modules() {
       this.contextTest = true;
   } );
   
-  QUnit.module( "afterEach and assert.async", {
-      beforeEach: function() {
-          this.state = false;
-      },
-      afterEach: function( assert ) {
-          assert.strictEqual( this.state, true, "Test afterEach." );
-      }
-  } );
-  
-  QUnit.test( "afterEach must be called after test ended", function( assert ) {
-      var testContext = this;
-      var done = assert.async();
-      assert.expect( 1 );
-      setTimeout( function() {
-          testContext.state = true;
-          done();
-      } );
-  } );
-  
-  QUnit.module( "async beforeEach test", {
-      beforeEach: function( assert ) {
-          var done = assert.async();
-          setTimeout( function() {
-              assert.ok( true );
-              done();
-          } );
-      }
-  } );
-  
-  QUnit.test( "module with async beforeEach", function( assert ) {
-      assert.expect( 2 );
-      assert.ok( true );
-  } );
-  
-  QUnit.module( "async afterEach test", {
-      afterEach: function( assert ) {
-          var done = assert.async();
-          setTimeout( function() {
-              assert.ok( true );
-              done();
-          } );
-      }
-  } );
-  
-  QUnit.test( "module with async afterEach", function( assert ) {
-      assert.expect( 2 );
-      assert.ok( true );
-  } );
+  if (!options || !options.synchronousOnly) {
+    QUnit.module( "afterEach and assert.async", {
+        beforeEach: function() {
+            this.state = false;
+        },
+        afterEach: function( assert ) {
+            assert.strictEqual( this.state, true, "Test afterEach." );
+        }
+    } );
+
+    QUnit.test( "afterEach must be called after test ended", function( assert ) {
+        var testContext = this;
+        var done = assert.async();
+        assert.expect( 1 );
+        setTimeout( function() {
+            testContext.state = true;
+            done();
+        } );
+    } );
+
+    QUnit.module( "async beforeEach test", {
+        beforeEach: function( assert ) {
+            var done = assert.async();
+            setTimeout( function() {
+                assert.ok( true );
+                done();
+            } );
+        }
+    } );
+
+    QUnit.test( "module with async beforeEach", function( assert ) {
+        assert.expect( 2 );
+        assert.ok( true );
+    } );
+
+    QUnit.module( "async afterEach test", {
+        afterEach: function( assert ) {
+            var done = assert.async();
+            setTimeout( function() {
+                assert.ok( true );
+                done();
+            } );
+        }
+    } );
+
+    QUnit.test( "module with async afterEach", function( assert ) {
+        assert.expect( 2 );
+        assert.ok( true );
+    } );
+  }
   
   QUnit.module( "save scope", {
       foo: "foo",
