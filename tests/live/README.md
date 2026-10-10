@@ -112,7 +112,7 @@ Results are saved to ignored `dist/live-results.json`; `dist/build.json` records
 the build ID. Each response must match both that ID and a fresh run ID. A zero
 exit code means completed, nonempty, internally consistent results with no
 failed assertions. All command, network, access, and test failures exit nonzero.
-A successful run ends with a line like `327/327 assertions passed; 0 failed`;
+A successful run ends with a line like `436/436 assertions passed; 0 failed`;
 the counts can change as tests are added.
 
 Each run creates an Apps Script version. Periodically manage old versions in
@@ -145,8 +145,11 @@ does not change the hosted code.
 
 ## Managing test cases
 
-The default registration list in `runLiveTests_` runs `deepEqual`, `dump`, and
-`utilities`, matching the original project's supported synchronous suites.
+The default registration list in `runLiveTests_` runs `deepEqual`, `dump`,
+`utilities`, `modules`, and `step`. The module suite includes immediate
+`assert.async()` callback/hook cases supported by the shim, not real elapsed-time
+or external asynchronous work. The imported step suite verifies that later
+logging callbacks retain raw array values after the production collector runs.
 Edit or add `.gs` files beneath `test/` and register new suite functions in that
 list. The build discovers nested `.gs` files automatically.
 

@@ -50,7 +50,7 @@ function runLiveTests_(runId, includeFailures) {
   init();
   QUnit.config.title = "QUnitGS2 Test";
   // Register at invocation time, not file-load time (Apps Script file ordering).
-  [deepEqual, dump, utilities].forEach(function(registerTests) {
+  [deepEqual, dump, utilities, modules, step].forEach(function(registerTests) {
     registerTests();
   });
   if (includeFailures) {

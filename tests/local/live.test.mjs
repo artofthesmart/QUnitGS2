@@ -71,11 +71,13 @@ test("the complete imported synchronous suite survives separate Apps Script requ
   assert.equal(start.request({ action: "run" }).status, "running");
   const result = runtime(start.store).request({ action: "results" });
   assert.equal(validateResponse(result, buildId, "test-run"), "complete");
-  assert.equal(result.summary.total, 327);
+  assert.equal(result.summary.total, 436);
   assert.equal(result.summary.failed, 0);
   assert.ok(result.tests.some(item => item.results.module === "equiv"));
   assert.ok(result.tests.some(item => item.results.module === "dump"));
   assert.ok(result.tests.some(item => item.results.module === "QUnit.objectType"));
+  assert.ok(result.tests.some(item => item.results.module === "before/beforeEach/afterEach/after"));
+  assert.ok(result.tests.some(item => item.results.module === "assert.verifySteps value reference"));
   assert.ok(result.tests.every(item => !item.results.name.includes("FORCE FAILURE")));
   assert.ok([...start.store.values()].some(value => value.startsWith("QUNITGS2:GZIP:1:")),
     "large reports are compressed before the live adapter persists them");
