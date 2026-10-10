@@ -154,3 +154,123 @@ arrange cleanup; never point them at a production spreadsheet.
 The same boundary works for email, Drive, and HTTP requests: keep logic in plain
 functions and service calls in small adapters. For service errors or timeouts,
 see [troubleshooting](/troubleshooting).
+
+## 6. Test a procedure that calls helpers and writes a value
+
+A procedure does not have to return a value to be testable. Call it normally
+inside `QUnit.test()`, then assert its observable effects. Calling other helpers
+does not require special QUnit support. Here is a complete example matching an
+`onClick()` procedure that writes a calculated balance to G11.
+
+In a separate practice project, put this application code in `Balance.gs`:
+
+```javascript
+var mainSheet;
+
+function readBalance(sheet) {
+  var rows = sheet.getRange("B2:B3").getValues();
+  return rows.reduce(function(total, row) {
+    if (typeof row[0] !== "number" || !Number.isFinite(row[0])) {
+      throw new Error("Balance inputs must be finite numbers");
+    }
+    return total + row[0];
+  }, 0);
+}
+
+function writeBalance(sheet) {
+  var balance = Math.round(readBalance(sheet) * 100000000) / 100000000;
+  sheet.getRange("G11").setValue(balance);
+}
+
+function onClick() {
+  writeBalance(mainSheet);
+}
+```
+
+This example rounds to eight decimal places to make its contract explicit; it
+is not a general-purpose money-handling policy. Define your own rounding and
+comparison tolerance for your application.
+
+Add this complete runner in `Tests.gs` instead of the quick-start runner:
+
+```javascript
+var QUnit = QUnitGS2.QUnit;
+
+function doGet() {
+  QUnitGS2.init();
+  registerBalanceTests();
+  QUnit.start();
+  return QUnitGS2.getHtml();
+}
+
+function getResultsFromServer() {
+  return QUnitGS2.getResultsFromServer();
+}
+
+function registerBalanceTests() {
+  QUnit.module("Balance procedure", function(hooks) {
+    var written;
+    var calls;
+
+    hooks.beforeEach(function() {
+      written = undefined;
+      calls = [];
+      mainSheet = {
+        getRange: function(address) {
+          calls.push(address);
+          if (address === "B2:B3") {
+            return { getValues: function() { return [[1.1], [1.00970231]]; } };
+          }
+          if (address === "G11") {
+            return {
+              setValue: function(value) { written = value; },
+              getValue: function() { return written; }
+            };
+          }
+          throw new Error("Unexpected range: " + address);
+        }
+      };
+    });
+
+    hooks.afterEach(function() {
+      mainSheet = undefined;
+    });
+
+    QUnit.test("onClick calls helpers and writes G11", function(assert) {
+      assert.expect(3);
+      var returned = onClick();
+      assert.strictEqual(returned, undefined, "the procedure need not return a value");
+      assert.deepEqual(calls, ["B2:B3", "G11"], "reads inputs then writes the result");
+      assert.strictEqual(mainSheet.getRange("G11").getValue(), 2.10970231,
+        "writes the numeric balance, not a numeric string");
+    });
+
+    QUnit.test("each test starts with a fresh sheet fixture", function(assert) {
+      assert.strictEqual(mainSheet.getRange("G11").getValue(), undefined,
+        "the previous result cannot make this test pass");
+      onClick();
+      assert.strictEqual(mainSheet.getRange("G11").getValue(), 2.10970231,
+        "runs the whole procedure again");
+    });
+  });
+}
+```
+
+**Expected result: 2 tests, 5 assertions passed, and 0 failed.** This fake uses
+no Google services and writes no real spreadsheet. Register tests after `init()`
+and initialize the fixture in `beforeEach`, not while loading script files.
+For a real-service check, initialize `mainSheet` from the explicitly opened
+disposable spreadsheet described above.
+
+If the application is imported as another library, assigning `mainSheet` in
+the test project does not initialize that library's private `mainSheet`.
+Prefer an application entry point accepting a sheet argument, such as
+`writeBalance(sheet)`, or an explicit public setup function in that library.
+
+If the page is blank, inspect **Executions** and the page's reported error.
+A missing `mainSheet`, an exception in a helper, or an unavailable result bridge
+is a failure, not a restriction on testing procedures. Library versions containing
+the exception-reporting fix retain thrown test/helper failures and continue to
+later tests. An unfinished execution or missing suite summary is not success.
+Slow service calls, triggers, and asynchronous work remain subject to
+[runtime limitations](/troubleshooting#runtime-limitations).
