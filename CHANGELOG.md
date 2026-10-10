@@ -2,6 +2,18 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Console reporting - 2026-10-10
+
+- Added opt-in assertion, test, and completion records through
+  `init({ logToConsole: true })`, including failed comparisons, stack sources,
+  and skipped/todo markers (#10).
+- Added `cacheResults: false` for console-only editor runs without HTML or
+  result-cache writes. Previous cached results are cleared; at least one
+  output is required. Existing no-argument initialization is unchanged.
+- Added bundled-engine regressions for mixed outcomes, circular values,
+  invalid settings, large console-only reports, and the executable README
+  example. Apps Script deployment remains separate from these local checks.
+
 ## Result-state reliability - 2026-09-14
 
 ### Fixed

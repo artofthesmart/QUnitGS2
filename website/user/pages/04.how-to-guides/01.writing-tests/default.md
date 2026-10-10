@@ -166,3 +166,21 @@ For more APIs, see the [QUnit documentation](https://api.qunitjs.com/).
 The bundled engine in this repository is QUnit 2.10.1; newer upstream APIs may
 not exist in your selected Apps Script library version. Check `QUnit.version`
 when adapting examples.
+
+## Log results without opening a web app
+
+For a library version containing console reporting, replace the runner's
+`QUnitGS2.init()` call with
+`QUnitGS2.init({ logToConsole: true, cacheResults: false })`. Register your tests
+and call `QUnit.start()` as usual. Run that function from the Apps Script editor;
+omit `getHtml()` and the browser result bridge for a console-only runner.
+
+The execution log includes assertion outcomes and comparison values, individual
+test counts, skipped/todo markers, and a final `Suite complete` record.
+Missing completion output does not mean the suite passed. Stack traces and
+assertion values may contain private data, so log only data you can safely retain.
+
+Use `{ logToConsole: true }` instead to keep both console and HTML output.
+Console-only mode clears previous cached results without writing new ones.
+No options means the existing HTML/cache behavior, with console reporting off.
+This does not add browser timers or unrestricted asynchronous testing.

@@ -106,9 +106,47 @@ function getResultsFromServer() {
 > in the [live test sources](tests/live), and in the
 > [Apps Script test project](https://script.google.com/d/1cmwYQ6H7k6v3xNoFhhcASR8K2_JBJcgJ2W0WFNE8Sy3fAJzfE2Kpbh_M/edit).
 
+### Run tests from the editor
+
+To see results without deploying a web app, add this function and run `runTests`
+from the Apps Script editor:
+
+```javascript
+var QUnit = QUnitGS2.QUnit;
+
+function runTests() {
+   QUnitGS2.init({ logToConsole: true, cacheResults: false });
+   QUnit.test("addition", function(assert) {
+      assert.strictEqual(1 + 1, 2, "adds two numbers");
+   });
+   QUnit.start();
+}
+```
+
+Each assertion and test is logged with its name and outcome, followed by a
+`Suite complete` record with assertion totals. Failures include comparison
+values and available stack traces; skipped and todo tests are marked explicitly.
+Only a completion record confirms that the suite finished.
+
+| `init` option | Default | Behavior |
+|---|---|---|
+| `logToConsole` | `false` | Write result records to `console.log`. |
+| `cacheResults` | `true` | Store results for the HTML page. |
+
+Use `QUnitGS2.init({ logToConsole: true })` to keep both console and HTML output.
+Console-only runs clear old results but do not write the results cache, so they
+do not encounter its per-value size limit. They need neither `getHtml()` nor a
+`getResultsFromServer()` bridge. At least one output must remain enabled.
+
+Logs are available in the Apps Script execution log and, with the appropriate
+Google Cloud project setup, Cloud Logging. Assertion values and stack traces may
+contain application data: enable logging only where that data is safe to record.
+This requires a published library version containing the feature or the updated
+source; it does not remove Apps Script's asynchronous testing limitations.
+
 ## Deploy as a web app.
 
-Once the code is in your project, you must either
+To use the HTML results page, you must either
 - deploy a web app of your script so it can render the HTML results of your
   tests, or
 - write your code so that a different project can be a web app and test your
