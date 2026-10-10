@@ -2,6 +2,20 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Synchronous no-try/catch debugging - 2026-10-10
+
+- Made `QUnit.config.notrycatch = true` after initialization use a synchronous
+  Apps Script debug task queue (#8), propagating original test/hook throws
+  directly from `QUnit.start()` instead of hiding them in Promise rejections.
+- Kept the normal Promise queue and exception reporting unchanged. Failed
+  assertions and explicit `assert.throws` checks still report normally in debug
+  mode; uncaught errors stop execution without a completion record.
+- Explicitly reject `assert.async()` and returned promises/thenables in debug
+  mode. Timer-based or external asynchronous work is not supported.
+- Added regressions for original thrown values, all hook phases, caller scope,
+  ordinary assertions, unsupported async callbacks, and iterative queue draining.
+  Publication and live Apps Script verification remain separate from local tests.
+
 ## Module and step completion coverage - 2026-10-10
 
 - Fixed assertion collection mutating the objects passed to later QUnit logging
