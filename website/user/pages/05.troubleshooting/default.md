@@ -125,6 +125,25 @@ QUnitGS2 repository does not change an already selected Apps Script library
 version. For unpublished library code, see
 [testing the right version](/how-to-guides/testing-existing-projects#make-sure-you-are-testing-the-right-version).
 
+## Debug an uncaught test or hook error
+
+Set `QUnit.config.notrycatch = true` immediately after `QUnitGS2.init()` and
+before registering tests. In library versions containing the synchronous-debug
+fix, `QUnit.start()` runs synchronous tasks without converting their throws into
+Promise rejections. The original error propagates to the calling runner, so
+inspect it in **Executions** when running from the editor.
+
+This intentionally stops on an unexpected exception. Later tests do not run,
+and an interrupted run has no completion summary. Earlier assertion records do
+not establish a passing suite. Start a fresh execution after fixing the error.
+Failed assertions and `assert.throws` retain their normal meanings.
+
+Use synchronous tests, hooks, and logging callbacks only. `assert.async()` and
+returned promises/thenables are rejected explicitly; do not schedule timers or
+external asynchronous work in this mode. Set `notrycatch` back to `false` for
+normal reporting and continued execution. A `?notrycatch` URL alone does not
+configure server-side QUnitGS2.
+
 ## Authorization and access
 
 The development URL is for project editors. If it fails to open, confirm that

@@ -144,6 +144,43 @@ contain application data: enable logging only where that data is safe to record.
 This requires a published library version containing the feature or the updated
 source; it does not remove Apps Script's asynchronous testing limitations.
 
+### Debug without catching exceptions
+
+For synchronous test debugging, set `QUnit.config.notrycatch = true` after
+initialization and before registering tests:
+
+```javascript
+var QUnit = QUnitGS2.QUnit;
+
+function debugTests() {
+   QUnitGS2.init({ logToConsole: true, cacheResults: false });
+   QUnit.config.notrycatch = true;
+   QUnit.test("debug a helper", function() {
+      throw new Error("Inspect this original error in the execution log");
+   });
+   QUnit.start();
+}
+```
+
+Run `debugTests` from the Apps Script editor. In versions containing this fix,
+the task queue runs synchronously in this mode: the original thrown value
+escapes `QUnit.start()` and stops the run rather than becoming an assertion or
+a deferred Promise rejection. Test and hook exceptions both propagate.
+Ordinary failed assertions still produce results, and `assert.throws` still
+catches the exceptions it is explicitly testing.
+
+This debug mode supports only synchronous tests, hooks, and logging callbacks.
+`assert.async()` and returned promises/thenables fail explicitly. Do not schedule
+timer callbacks or external asynchronous work in a debug run. A halted run may
+retain earlier assertions or completed tests but has no suite completion summary;
+it is not a passing run. Start a fresh execution after fixing the error.
+
+For normal testing, omit the setting or set `QUnit.config.notrycatch = false`
+before starting. Normal mode reports unexpected exceptions as failures and
+continues subsequent tests. Enable the option in code, not with a URL query
+parameter: the Apps Script wrapper does not translate browser query parameters
+into QUnit configuration.
+
 ### Check for accidental globals
 
 Enable `QUnit.config.noglobals` before registering tests. When importing QUnitGS2

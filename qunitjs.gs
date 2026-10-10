@@ -2477,6 +2477,32 @@
 
   var Promise$1 = typeof Promise !== "undefined" ? Promise : Promise$2;
 
+  function synchronousDebug() {
+  	return config.gsSynchronousDebug && config.notrycatch;
+  }
+
+  // Debug tasks must not capture throws in a Promise rejection.
+  function SynchronousTask(value) {
+  	this.value = value;
+  }
+
+  SynchronousTask.prototype.then = function (callback) {
+  	return resolveTask(callback(this.value));
+  };
+
+  function resolveTask(value) {
+  	if (!synchronousDebug()) {
+  		return Promise$1.resolve(value);
+  	}
+  	if (value instanceof SynchronousTask) {
+  		return value;
+  	}
+  	if (value != null && typeof value.then === "function") {
+  		throw new Error("QUnitGS2 notrycatch debugging requires synchronous tests and callbacks; returned promises are unsupported.");
+  	}
+  	return new SynchronousTask(value);
+  }
+
   // Register logging callbacks
   function registerLoggingCallbacks(obj) {
   	var i,
@@ -2525,9 +2551,9 @@
   	// ensure that each callback is executed serially
   	return callbacks.reduce(function (promiseChain, callback) {
   		return promiseChain.then(function () {
-  			return Promise$1.resolve(callback(args));
+  			return resolveTask(callback(args));
   		});
-  	}, Promise$1.resolve([]));
+  	}, resolveTask([]));
   }
 
   // Doesn't support IE9, it will return undefined on these browsers
@@ -2583,12 +2609,34 @@
   // After tests are dequeued from config.queue they are expanded into
   // a set of tasks in this queue.
   var taskQueue = [];
+  var synchronousAdvancing = false;
 
   /**
    * Advances the taskQueue to the next task. If the taskQueue is empty,
    * process the testQueue
    */
   function advance() {
+  	if (synchronousDebug()) {
+  		if (synchronousAdvancing) {
+  			return;
+  		}
+  		synchronousAdvancing = true;
+  		try {
+  			while (!config.blocking && !ProcessingQueue.finished) {
+  				if (taskQueue.length) {
+  					resolveTask(taskQueue.shift()());
+  				} else if (config.queue.length) {
+  					addToTaskQueue(config.queue.shift()());
+  					if (priorityCount > 0) priorityCount--;
+  				} else {
+  					done();
+  				}
+  			}
+  		} finally {
+  			synchronousAdvancing = false;
+  		}
+  		return;
+  	}
   	advanceTaskQueue();
 
   	if (!taskQueue.length && !config.blocking && !config.current) {
@@ -2618,7 +2666,7 @@
 
   		if (!defined.setTimeout || config.updateRate <= 0 || elapsedTime < config.updateRate) {
   			var task = taskQueue.shift();
-  			Promise$1.resolve(task()).then(function () {
+  			resolveTask(task()).then(function () {
   				if (!taskQueue.length) {
   					advance();
   				} else {
@@ -2996,7 +3044,7 @@
   					tests: startModule.tests
   				});
   			});
-  		}, Promise$1.resolve([]));
+  		}, resolveTask([]));
 
   		return callbackPromises.then(function () {
   			config.current = _this;
@@ -3218,7 +3266,7 @@
   					return promiseChain.then(function () {
   						return logSuiteEnd(completedModule);
   					});
-  				}, Promise$1.resolve([]));
+  				}, resolveTask([]));
   			}
   		}).then(function () {
   			config.current = undefined;
@@ -3361,6 +3409,10 @@
 
 
   	resolvePromise: function resolvePromise(promise, phase) {
+  		if (synchronousDebug()) {
+  			resolveTask(promise);
+  			return;
+  		}
   		var then,
   		    resume,
   		    message,
@@ -3577,6 +3629,9 @@
 
   // Put a hold on processing and return a function that will release it.
   function internalStop(test) {
+  	if (synchronousDebug()) {
+  		throw new Error("QUnitGS2 notrycatch debugging does not support assert.async() or asynchronous hooks.");
+  	}
   	var released = false;
   	test.semaphore += 1;
   	config.blocking = true;
@@ -4387,7 +4442,7 @@
   	runStarted = true;
 
   	// Add a slight delay to allow definition of more modules and tests.
-  	if (defined.setTimeout) {
+  	if (defined.setTimeout && !synchronousDebug()) {
   		setTimeout$1(function () {
   			begin();
   		});

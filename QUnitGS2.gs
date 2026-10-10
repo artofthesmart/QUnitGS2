@@ -65,6 +65,7 @@
  * To upgrade to a later version of QUnit simply:
  * 
  * - Copy the new version into qunitjs.gs
+ *   and preserve the Apps Script global-scope and synchronous-debug adapters.
  *  
  * - Ensure the main QUnit object is exported from the main Qunit library by 
  *   adding to exportQUnit():
@@ -128,6 +129,7 @@ function init(options) {
   QUnit.config.pollution = undefined;
   
   QUnit.config.autostart = false;
+  QUnit.config.gsSynchronousDebug = true;
   
   QUnit.config.storage = {
     store: {},
