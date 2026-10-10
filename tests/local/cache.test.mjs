@@ -172,3 +172,18 @@ test("compression service errors propagate without replacing an earlier partial 
   }), /gzip service failure/);
   assert.equal(cache.get("qunit_test_results"), previous);
 });
+
+test("gzip retrieval supplies the Blob content type required by Apps Script", () => {
+  const library = createLibrary();
+  const compressed = library.encodeResultCache_(JSON.stringify(["x".repeat(90000)]));
+  const originalUngzip = library.Utilities.ungzip;
+  let contentType;
+  library.Utilities.ungzip = blob => {
+    contentType = blob.getContentType();
+    return originalUngzip(blob);
+  };
+  assert.equal(library.decodeResultCache_(compressed), JSON.stringify(["x".repeat(90000)]));
+  assert.equal(contentType, "application/x-gzip");
+  const bytes = library.Utilities.base64Decode(compressed.slice("QUNITGS2:GZIP:1:".length));
+  assert.throws(() => originalUngzip(library.Utilities.newBlob(bytes)), /content type/);
+});

@@ -39,6 +39,11 @@ production cache path, including gzip round trips, Unicode byte boundaries,
 legacy JSON compatibility, and explicit incompressible-report errors, separately
 from the live project's chunked adapter. See [live setup](live/README.md)
 for the separate `npm run test:live` command; it is never run by offline CI.
+Live request tests require completion and persistence before returning, with
+Promise resolution and timer scheduling disabled. They do not rely on a Node VM
+microtask checkpoint to emulate post-request Apps Script work.
+Run offline build tests and `npm run test:live` separately: both regenerate
+`dist/live`, so running them concurrently can overwrite deployment assets.
 
 The collection tests load the bundled QUnit engine and Apps Script wrapper in an
 isolated VM with an in-memory CacheService substitute. Every suite must finish,

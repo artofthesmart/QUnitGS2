@@ -2,6 +2,27 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Live request completion - 2026-10-10
+
+- Fixed the live harness's reliance on a completion callback after the request
+  boundary (#30). Run the supported suite through the synchronous adapter,
+  validate and persist results before returning, and embed browser results.
+- Explicitly exclude the three archived async module cases from deployed runs,
+  retaining them for offline tests. The deployed suite now has 431 assertions;
+  unsupported new async cases produce execution errors.
+- Return correlated errors for failed executions, persistence, corruption, and
+  unavailable results rather than remaining `pending`. Retry only deployment
+  propagation, not background completion.
+- Replaced the live-request VM microtask checkpoint with Promise/timer traps and
+  added regressions for request-contained completion and failure paths.
+- Fixed compressed-result retrieval supplying a blob without a content type
+  to Apps Script `Utilities.ungzip`; the codec now declares `application/x-gzip`
+  and the local service substitute enforces that boundary.
+- Verified the dedicated Apps Script deployment on October 10, 2026:
+  431/431 assertions passed in a single request, with matching persisted
+  retrieval and a completed hosted browser report. The published library was not
+  changed; this fixes the live harness, not general asynchronous support.
+
 ## Bridge-free synchronous HTML reports - 2026-10-10
 
 - Added `run(registerTests)` to initialize, run synchronous tests, and return

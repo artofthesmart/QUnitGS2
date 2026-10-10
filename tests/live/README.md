@@ -104,7 +104,7 @@ npm run test:live
 
 The equivalent shell command is `bash scripts/test-live.sh`. It builds locally,
 pushes with clasp, creates a version and updates the configured deployment,
-starts the tests with wget, and fetches their results. **Push alone does not
+starts the tests with wget, and reads completed results from that same request. **Push alone does not
 update an `/exec` deployment**, which is why redeployment is included.
 The root library manifest and published library deployment are untouched.
 
@@ -112,7 +112,7 @@ Results are saved to ignored `dist/live-results.json`; `dist/build.json` records
 the build ID. Each response must match both that ID and a fresh run ID. A zero
 exit code means completed, nonempty, internally consistent results with no
 failed assertions. All command, network, access, and test failures exit nonzero.
-A successful run ends with a line like `436/436 assertions passed; 0 failed`;
+A successful run ends with a line like `431/431 assertions passed; 0 failed`;
 the counts can change as tests are added.
 
 Each run creates an Apps Script version. Periodically manage old versions in
@@ -140,15 +140,19 @@ does not change the hosted code.
 | An error mentions missing `wget` | Install GNU wget and check `wget --version`. |
 | Not logged in, permission denied, or Apps Script API disabled | Check `npx clasp show-authorized-user`, the account's API setting, and access to the chosen project. Sign in again if needed. |
 | Expected JSON, but received a sign-in or error page | Check the deployment ID, **Web app** type, **Me** execution identity, anonymous **Anyone** access, and any owner authorization prompts. |
-| Timed out waiting for completed results | Inspect **Executions** in the test project for errors. Unsupported async tests or evicted cached results cannot count as success. |
+| Timed out waiting for the build to deploy | Confirm the configured deployment ID and inspect **Executions**. Retries are only for deployment propagation, not background test completion. |
+| Endpoint returns `running` or `pending` | This runner requires completion inside the run request. Redeploy the current build; do not poll an execution that has already ended. |
+| Results unavailable or evicted | Run a fresh suite. The initial run response contains the completed report; later retrieval depends on temporary cache entries. |
 | A live-test command is already running | Wait for it to finish. If it was interrupted and no run is active, remove only the empty lock directory with `rmdir .live-test.lock` from the root. |
 
 ## Managing test cases
 
 The default registration list in `runLiveTests_` runs `deepEqual`, `dump`,
-`utilities`, `modules`, and `step`. The module suite includes immediate
-`assert.async()` callback/hook cases supported by the shim, not real elapsed-time
-or external asynchronous work. The imported step suite verifies that later
+`utilities`, `modules({ synchronousOnly: true })`, and `step`. The module suite
+explicitly excludes three async test/hook cases (five assertions) from deployed
+runs: Apps Script completion must not depend on the Promise-based timer shim.
+The full module suite remains available for offline shim tests. New asynchronous
+cases are rejected, not silently treated as passing. The imported step suite verifies that later
 logging callbacks retain raw array values after the production collector runs.
 Edit or add `.gs` files beneath `test/` and register new suite functions in that
 list. The build discovers nested `.gs` files automatically.
@@ -164,9 +168,11 @@ timer/event-loop support equivalent to a browser.
 
 This directory replaces the separate
 [`artofthesmart/QUnitGS2-Test`](https://github.com/artofthesmart/QUnitGS2-Test)
-source repository. The `test/` files and MIT license were imported unchanged from
+source repository. The `test/` files and MIT license were originally imported from
 commit `5a8a825e1a03cc3dbe2326c3581dc5f59e3c59f3`. This is a source snapshot, not a
-merge of that repository's Git history. Importing the files does not change the
+merge of that repository's Git history. `modules.gs` now has an explicit
+synchronous-only registration option; the original async cases remain in source.
+Importing the files does not change the
 old repository or deploy a Google project.
 
 The pending exception suite and verifier in
@@ -182,18 +188,22 @@ a published-library dependency. Do not edit the generated `dist/live` files.
 ## Results and access boundary
 
 The JSON protocol uses `format=json`, `buildId`, `runId`, and either
-`action=run` or `action=results`. A run request returns `status: "running"`;
-QUnit's Promise callbacks complete after the synchronous request handler returns.
-The second request returns `status: "complete"`, the QUnit `summary`, and
-per-test `tests` with assertions. Unavailable/evicted results return `"pending"`;
-invalid requests return `"error"` with an explanation.
+`action=run` or `action=results`. A run request executes the supported synchronous
+suite through the library's `run(registerTests)` adapter and returns
+`status: "complete"`, the QUnit `summary`, and per-test `tests` before the request
+ends. It persists the same validated report before returning. Execution and
+persistence errors return `"error"` with an explanation and are logged.
+`action=results` is optional retrieval of that report; unavailable/evicted or
+invalid data returns `"error"`, never `"pending"`. The browser receives
+self-contained HTML with embedded results and no result RPC dependency.
 
 Only the test project replaces the library's internal cache handle with an
-adapter. It accumulates results in memory during execution, then stores chunks
-below Google's 100 KB per-entry limit after QUnit's completion callback.
+adapter. It stores the completed report in chunks below Google's 100 KB per-entry
+limit synchronously, after execution and before the response returns.
 JSON results are isolated by build and run ID and expire after ten minutes
 (Google can evict them earlier). The browser RPC reads the latest browser run.
-The command uses bounded polling and never treats missing results as passing.
+The command retries only mismatched builds while deployment propagates.
+It never polls for background test completion or treats missing results as passing.
 
 This adapter remains test infrastructure. Production now compresses large
 reports before writing its single cache entry; the live adapter persists the same
@@ -202,6 +212,12 @@ Separate [production-cache regressions](../local/cache.test.mjs) exercise gzip
 round trips, Unicode boundaries, older plain JSON, and reports that still exceed
 the limit after compression. A passing live run does not establish durable cache
 storage or unlimited report size for library consumers.
+
+Offline request tests do not drain a VM microtask queue: they replace Promise
+resolution and timer scheduling with errors so deferred completion cannot pass.
+The earlier `microtaskMode: "afterEvaluate"` harness hid this request-boundary
+dependency. Tests cover immediate completion, persisted retrieval, rejected async
+cases, registration/cache errors, corruption, and missing chunks.
 
 **This endpoint is public and runs as its owner.** Anyone with its URL can run
 tests, consume project quotas, and read test output; run IDs are correlation

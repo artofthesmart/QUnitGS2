@@ -55,11 +55,9 @@ test("sign-in pages, invalid summaries, mismatched runs, and partial results fai
   }
 });
 
-test("fetching waits for deployment propagation, starts once, and polls correlated results", async () => {
+test("fetching waits only for deployment propagation and returns the run request's complete report", async () => {
   const replies = [
     { buildId: "previous-build", runId: "run", status: "error" },
-    { buildId: "build", runId: "run", status: "running" },
-    { buildId: "build", runId: "run", status: "pending" },
     result()
   ];
   const actions = [];
@@ -72,16 +70,24 @@ test("fetching waits for deployment propagation, starts once, and polls correlat
     return JSON.stringify(replies.shift());
   }, async () => {});
   assert.deepEqual(response, result());
-  assert.deepEqual(actions, ["run", "run", "results", "results"]);
+  assert.deepEqual(actions, ["run", "run"]);
 });
 
 test("fetching has bounded retries and propagates transport and server errors", async () => {
   let attempts = 0;
   await assert.rejects(fetchResults("https://example.test/exec", "build", "run", async () => {
     attempts++;
-    return JSON.stringify({ buildId: "build", runId: "run", status: "pending" });
+    return JSON.stringify({ buildId: "previous-build", runId: "run", status: "error" });
   }, async () => {}), /Timed out/);
   assert.equal(attempts, 12);
+  for (const status of ["running", "pending"]) {
+    let requests = 0;
+    await assert.rejects(fetchResults("https://example.test/exec", "build", "run", async () => {
+      requests++;
+      return JSON.stringify({ buildId: "build", runId: "run", status });
+    }, async () => assert.fail("must not poll finished requests")), /did not complete within/);
+    assert.equal(requests, 1);
+  }
   await assert.rejects(fetchResults("https://example.test/exec", "build", "run", async () => {
     throw new Error("wget failed");
   }), /wget failed/);
@@ -140,7 +146,6 @@ if (name === "clasp") {
   const response = ${JSON.stringify(result())};
   response.buildId = buildId;
   response.runId = url.searchParams.get("runId");
-  if (url.searchParams.get("action") === "run") response.status = "running";
   if (process.env.FAIL_ASSERTION) {
     response.summary = {...response.summary, passed: 0, failed: 1};
     response.tests[0].results = {...response.tests[0].results, passed: 0, failed: 1};
@@ -169,7 +174,7 @@ if (name === "clasp") {
   assert.ok(claspCalls[0].args.includes("--force"));
   assert.equal(claspCalls[1].args[claspCalls[1].args.indexOf("--deploymentId") + 1], "AKfy-test-deployment");
   assert.deepEqual(calls.filter(call => call.name === "wget" && !call.args.includes("--version"))
-    .map(call => new URL(call.args.at(-1)).searchParams.get("action")), ["run", "results"]);
+    .map(call => new URL(call.args.at(-1)).searchParams.get("action")), ["run"]);
   const project = JSON.parse(await readFile(path.join(directory, "dist/live/.clasp.json"), "utf8"));
   assert.equal(project.scriptId, "test-script-12345678901234567890");
   assert.equal(project.rootDir, ".");

@@ -458,7 +458,7 @@ function decodeResultCache_(value) {
     throw new Error('Unrecognized QUnitGS2 result cache format');
   }
   var bytes = Utilities.base64Decode(value.slice(prefix.length));
-  return Utilities.ungzip(Utilities.newBlob(bytes)).getDataAsString('UTF-8');
+  return Utilities.ungzip(Utilities.newBlob(bytes, 'application/x-gzip')).getDataAsString('UTF-8');
 }
 
 function resultCacheByteLength_(value) {
