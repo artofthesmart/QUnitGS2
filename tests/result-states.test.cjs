@@ -35,6 +35,30 @@ for (const [name, source] of [
   });
 }
 
+test('keeps native timer functions when the host provides them', () => {
+  const nativeSetTimeout = () => 1;
+  const nativeClearTimeout = () => {};
+  const context = vm.createContext({
+    CacheService: {
+      getUserCache: () => ({
+        get: () => null,
+        put: () => {},
+        remove: () => {}
+      })
+    },
+    setTimeout: nativeSetTimeout,
+    clearTimeout: nativeClearTimeout
+  });
+
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'QUnitGS2.gs'), 'utf8'), context, {
+    filename: 'QUnitGS2.gs',
+    timeout: 5000
+  });
+
+  assert.equal(context.setTimeout, nativeSetTimeout);
+  assert.equal(context.clearTimeout, nativeClearTimeout);
+});
+
 test('does not turn a cache miss into a completed empty suite', () => {
   const library = createLibrary();
   library.init();
