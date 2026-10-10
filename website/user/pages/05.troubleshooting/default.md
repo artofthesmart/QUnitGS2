@@ -25,6 +25,22 @@ separate practice project. Its two passing assertions give you a known baseline.
 | An access or authorization error | Check the account, execution identity, and [deployment settings](#authorization-and-access). |
 | A run is slow or never finishes | Check [runtime limitations](#runtime-limitations). |
 
+## QUnit is not defined
+
+JavaScript names are case-sensitive: `Qunit` and `QUnit` are different variables.
+Use `var QUnit = QUnitGS2.QUnit;` and the same spelling in every `QUnit.module`,
+`QUnit.test`, and `QUnit.start` call. The library's own global `QUnit` does not
+automatically become a global in your test project.
+
+Keep the semicolons shown in the examples. Removing one does not correct an
+alias mismatch. Register tests inside a function called after `init()`, not at
+file load time, so setup does not depend on the order of script files.
+
+The default page title in versions containing this fix uses `QUnit.version`.
+Older titles hard-coded 2.9.2 even when the engine was different. Inspect
+`QUnitGS2.QUnit.version` for the actual engine version; a custom
+`QUnit.config.title` is an application label, not a version check.
+
 ## Missing results
 
 A blank page, green styling by itself, or an empty list is **not proof that tests

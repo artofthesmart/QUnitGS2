@@ -89,6 +89,11 @@ from the string `"3"`.
 registration inside functions called by `doGet()`, after `QUnitGS2.init()`, rather
 than running tests at file load time. This avoids relying on script file order.
 
+Use the exact capitalization `QUnit` everywhere, including `QUnit.start()`.
+`Qunit` is a different variable. Keep the semicolons; removing them does not fix
+a missing or misspelled alias. The library does not create the alias in your
+test project's scope.
+
 ## 5. Run it and read the failure
 
 Save both files. Choose **Deploy > Test deployments**, select **Web app**, copy

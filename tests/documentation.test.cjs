@@ -84,6 +84,40 @@ test('documentation harness does not leak the library QUnit global into the cons
   ), { testCount: 1, total: 1 }), /QUnit is not defined/);
 });
 
+test('issue 12 mixed-case alias fails while the corrected semicolon-terminated example runs', () => {
+  const source = `
+    var Qunit = QUnitGS2.QUnit;
+    function doGet() {
+      QUnitGS2.init();
+      QUnit.module("reviewBugInfo tests");
+      QUnit.test("Missing Mandatory fields", function(assert) {
+        assert.strictEqual(reviewBugInfo(null), null, "missing field");
+      });
+      Qunit.start();
+      return QUnitGS2.getHtml();
+    }
+    function reviewBugInfo(value) { return value; }
+    function getResultsFromServer() { return QUnitGS2.getResultsFromServer(); }`;
+  assert.throws(() => runExample(source, { testCount: 1, total: 1 }), /QUnit is not defined/);
+  runExample(source.replace(/\bQunit\b/g, 'QUnit'), { testCount: 1, total: 1 });
+});
+
+test('quick-start registration works when separate files are loaded in either order', () => {
+  const runner = quickStart.slice(0, quickStart.indexOf('function registerMathTests()'));
+  const registration = quickStart.slice(quickStart.indexOf('function registerMathTests()'));
+  for (const files of [[runner, registration], [registration, runner]]) {
+    const { context, library } = createConsumer('');
+    for (const source of files) vm.runInContext(source, context, { timeout: 5000 });
+    assert.equal(library.getResultsFromServer(), null);
+    context.doGet();
+    vm.runInContext('', library, { timeout: 5000 });
+    const records = JSON.parse(context.getResultsFromServer());
+    const summary = records.find(record => record.type === 'TESTS_RESULTS_ALL').value;
+    assert.equal(summary.failed, 0);
+    assert.equal(summary.total, 2);
+  }
+});
+
 test('homepage leads to a complete quick start that runs without inserting tests', () => {
   assert.match(readDocument(`${pagesRoot}/01.home/default.md`), /\]\(\/quick-start-guide\)/);
   const { tests } = runExample(quickStart, { testCount: 2, total: 2 });

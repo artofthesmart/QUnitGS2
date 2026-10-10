@@ -9,13 +9,25 @@ test('getHtml binds the real templates and includes the browser script', () => {
   const library = createLibrary();
   library.init();
   const output = library.getHtml();
-  assert.equal(output.getTitle(), 'QUnit v2.9.2 for Google Apps Script');
+  assert.equal(output.getTitle(), `QUnit v${library.QUnit.version} for Google Apps Script`);
+  assert.ok(output.getContent().includes(`QUnit v${library.QUnit.version} for Google Apps Script`));
   assert.match(output.getContent(), /href="https:\/\/qunitgs2\.test\/"/);
   assert.match(output.getContent(), /action="https:\/\/qunitgs2\.test\/"/);
   assert.match(output.getContent(), /id="qunit-filter-pass"/);
   assert.match(output.getContent(), /window\.onload = function/);
   assert.match(output.getContent(), /withSuccessHandler\(onSuccess\)/);
   assert.doesNotMatch(output.getContent(), /<\?/);
+});
+
+test('default title follows the loaded engine version rather than a stale literal', () => {
+  const library = createLibrary();
+  library.init();
+  library.QUnit.version = '9.8.7-test';
+  const output = library.getHtml();
+  assert.equal(output.getTitle(), 'QUnit v9.8.7-test for Google Apps Script');
+  assert.ok(output.getContent().includes('QUnit v9.8.7-test for Google Apps Script'));
+  library.QUnit.config.title = 'Application tests';
+  assert.equal(library.getHtml().getTitle(), 'Application tests');
 });
 
 test('getHtml preserves custom title, stylesheet and hidepassed bindings', () => {
