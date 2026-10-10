@@ -332,8 +332,44 @@ function _include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent()
 }
 
-// Apps Script only runs sync, so setTimeoutis "stubbed out" and just runs the
-// callback immediately
-function setTimeout(callback, timeout) {return callback()} // TODO
+// Apps Script does not provide browser timer APIs, so only install the shim when
+// the runtime is missing native scheduling. We keep the host's real timer functions
+// in place to avoid breaking QUnit's async lifecycle in Node/browser-like runs.
+var GLOBAL_ = (typeof globalThis !== 'undefined') ? globalThis : Function('return this')();
+var QUNITGS2_TIMER_ID_ = 0;
+var QUNITGS2_TIMERS_ = Object.create(null);
+
+if (typeof GLOBAL_.setTimeout !== 'function') {
+  GLOBAL_.setTimeout = function(callback, timeout) {
+    if (typeof callback !== 'function') {
+      return 0;
+    }
+
+    var id = ++QUNITGS2_TIMER_ID_;
+    QUNITGS2_TIMERS_[id] = true;
+
+    function run() {
+      if (!QUNITGS2_TIMERS_[id]) {
+        return;
+      }
+      delete QUNITGS2_TIMERS_[id];
+      callback();
+    }
+
+    if (typeof Promise !== 'undefined' && typeof Promise.resolve === 'function') {
+      Promise.resolve().then(run);
+    } else {
+      run();
+    }
+
+    return id;
+  };
+}
+
+if (typeof GLOBAL_.clearTimeout !== 'function') {
+  GLOBAL_.clearTimeout = function(id) {
+    delete QUNITGS2_TIMERS_[id];
+  };
+}
 
 var CACHE_ = CacheService.getUserCache()
