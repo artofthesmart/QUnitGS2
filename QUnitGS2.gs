@@ -340,7 +340,8 @@ function init(options) {
 function getHtml() {
   
   var mainTemplate = HtmlService.createTemplateFromFile( "index" );
-  mainTemplate.title = QUnit.config.title ? QUnit.config.title : "QUnit v2.9.2 for Google Apps Script";
+  mainTemplate.title = QUnit.config.title ? QUnit.config.title :
+    "QUnit v" + QUnit.version + " for Google Apps Script";
   
   var toolbarTemplate = HtmlService.createTemplateFromFile( "qunit-toolbar" );
   

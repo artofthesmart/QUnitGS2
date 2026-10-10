@@ -2,6 +2,16 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## QUnit alias and version clarity - 2026-10-10
+
+- Fixed the default HTML/page title to reflect `QUnit.version` instead of the
+  stale hard-coded 2.9.2 label reported in #12. Custom titles remain unchanged.
+- Clarified the case-sensitive consumer alias, semicolon usage, and
+  invocation-time registration in the tutorial and troubleshooting guide.
+- Added regressions reproducing the mixed `Qunit`/`QUnit` example, running the
+  corrected example unchanged with semicolons, loading runner/test files in
+  either order, and following engine version changes in the default title.
+
 ## Procedure-testing guidance - 2026-10-10
 
 - Added a complete no-return `onClick()` example with nested helper calls,
