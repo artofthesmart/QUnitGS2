@@ -86,10 +86,34 @@
  * <pre>
  * Main initialisation function for QUnitGS2, called from the doGet in the 
  * script project running the tests
+ *
+ * Optional settings: logToConsole (default false), cacheResults (default true).
+ * Set logToConsole true and cacheResults false for an editor-only test run.
  * </pre>
  */
 
-function init() {
+function init(options) {
+  if (options === undefined) options = {};
+  if (options === null || typeof options !== 'object' || Array.isArray(options)) {
+    throw new TypeError('QUnitGS2.init options must be an object');
+  }
+  Object.keys(options).forEach(function(key) {
+    if (key !== 'logToConsole' && key !== 'cacheResults') {
+      throw new TypeError('Unknown QUnitGS2.init option: ' + key);
+    }
+    if (typeof options[key] !== 'boolean') {
+      throw new TypeError('QUnitGS2.init ' + key + ' must be a boolean');
+    }
+  });
+  var logToConsole = options.logToConsole === true;
+  var cacheResults = options.cacheResults !== false;
+  if (!cacheResults && !logToConsole) {
+    throw new Error('QUnitGS2.init requires at least one results output');
+  }
+  if (logToConsole && (typeof console === 'undefined' || console === null ||
+      typeof console.log !== 'function')) {
+    throw new Error('QUnitGS2 console reporting requires console.log');
+  }
   
   CACHE_.remove('qunit_test_results')  
   
@@ -113,15 +137,46 @@ function init() {
   // -----------------
   
   function onAllTestsFinished(details) {
-    push('TESTS_RESULTS_ALL', details)    
+    report('Suite complete', details);
+    if (cacheResults) push('TESTS_RESULTS_ALL', details);
   }
   
   function onTestDone(details) {
-    push('TESTS_RESULTS_ONE', details)    
+    report('Test', {
+      module: details.module,
+      name: details.name,
+      skipped: details.skipped,
+      todo: details.todo,
+      passed: details.passed,
+      failed: details.failed,
+      total: details.total,
+      runtime: details.runtime
+    });
+    if (cacheResults) push('TESTS_RESULTS_ONE', details);
   }
   
   function onAssertResult(details) {
-    push('TESTS_RESULTS_ASSERT', details)    
+    if (logToConsole) {
+      var assertion = {
+        module: details.module,
+        name: details.name,
+        result: details.result,
+        todo: details.todo,
+        message: details.message
+      };
+      ['expected', 'actual'].forEach(function(key) {
+        if (Object.prototype.hasOwnProperty.call(details, key)) {
+          assertion[key] = QUnit.dump.parse(details[key]);
+        }
+      });
+      if (!details.result && details.source) assertion.source = details.source;
+      report('Assertion', assertion);
+    }
+    if (cacheResults) push('TESTS_RESULTS_ASSERT', details);
+  }
+
+  function report(label, details) {
+    if (logToConsole) console.log('[QUnitGS2] ' + label + ': ' + JSON.stringify(details));
   }
   
   function push(type, details) {
