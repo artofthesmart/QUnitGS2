@@ -43,6 +43,12 @@ Older titles hard-coded 2.9.2 even when the engine was different. Inspect
 
 ## Missing results
 
+For synchronous suites, versions containing `QUnitGS2.run(registerTests)` can
+embed completed results in the HTML and need no browser bridge. Keep registration
+inside the supplied function and let `run()` initialize/start the suite.
+This mode rejects `assert.async()` and returned promises; it does not support
+timer-based or external asynchronous work.
+
 A blank page, green styling by itself, or an empty list is **not proof that tests
 passed**. Look for a completed summary and the test rows you expected.
 Unavailable, incomplete, or error results need investigation before you trust
@@ -52,7 +58,7 @@ the run.
    `doGet` or `getResultsFromServer` execution for errors.
 2. Confirm that `doGet()` calls `QUnitGS2.init()`, registers at least one test,
    calls `QUnit.start()`, and returns `QUnitGS2.getHtml()`, in that order.
-3. Keep this exact bridge in the project serving the web app, not only in an
+3. For the legacy `init()`/`start()`/`getHtml()` runner, keep this exact bridge in the project serving the web app, not only in an
    imported application library:
 
 ```javascript

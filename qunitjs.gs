@@ -2481,6 +2481,16 @@
   	return config.gsSynchronousDebug && config.notrycatch;
   }
 
+  function synchronousExecution() {
+  	return synchronousDebug() || config.gsSynchronousRun;
+  }
+
+  function unsupportedSynchronousWork() {
+  	var error = new Error("QUnitGS2 synchronous runs require synchronous tests, hooks and callbacks; assert.async() and returned promises are unsupported.");
+  	config.gsSynchronousError = error;
+  	throw error;
+  }
+
   // Debug tasks must not capture throws in a Promise rejection.
   function SynchronousTask(value) {
   	this.value = value;
@@ -2491,14 +2501,14 @@
   };
 
   function resolveTask(value) {
-  	if (!synchronousDebug()) {
+  	if (!synchronousExecution()) {
   		return Promise$1.resolve(value);
   	}
   	if (value instanceof SynchronousTask) {
   		return value;
   	}
   	if (value != null && typeof value.then === "function") {
-  		throw new Error("QUnitGS2 notrycatch debugging requires synchronous tests and callbacks; returned promises are unsupported.");
+  		unsupportedSynchronousWork();
   	}
   	return new SynchronousTask(value);
   }
@@ -2543,7 +2553,8 @@
   	// would mean promisfying each step of a test
   	if (key === "log") {
   		callbacks.map(function (callback) {
-  			return callback(args);
+  			var result = callback(args);
+  			return synchronousExecution() ? resolveTask(result) : result;
   		});
   		return;
   	}
@@ -2616,7 +2627,7 @@
    * process the testQueue
    */
   function advance() {
-  	if (synchronousDebug()) {
+  	if (synchronousExecution()) {
   		if (synchronousAdvancing) {
   			return;
   		}
@@ -3409,7 +3420,7 @@
 
 
   	resolvePromise: function resolvePromise(promise, phase) {
-  		if (synchronousDebug()) {
+  		if (synchronousExecution()) {
   			resolveTask(promise);
   			return;
   		}
@@ -3629,8 +3640,8 @@
 
   // Put a hold on processing and return a function that will release it.
   function internalStop(test) {
-  	if (synchronousDebug()) {
-  		throw new Error("QUnitGS2 notrycatch debugging does not support assert.async() or asynchronous hooks.");
+  	if (synchronousExecution()) {
+  		unsupportedSynchronousWork();
   	}
   	var released = false;
   	test.semaphore += 1;
@@ -4442,7 +4453,7 @@
   	runStarted = true;
 
   	// Add a slight delay to allow definition of more modules and tests.
-  	if (defined.setTimeout && !synchronousDebug()) {
+  	if (defined.setTimeout && !synchronousExecution()) {
   		setTimeout$1(function () {
   			begin();
   		});
