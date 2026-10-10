@@ -184,3 +184,21 @@ Use `{ logToConsole: true }` instead to keep both console and HTML output.
 Console-only mode clears previous cached results without writing new ones.
 No options means the existing HTML/cache behavior, with console reporting off.
 This does not add browser timers or unrestricted asynchronous testing.
+
+## Check for accidental global variables
+
+Call `QUnitGS2.init({ globalObject: globalThis })` and then set
+`QUnit.config.noglobals = true` before registering tests. Passing `globalThis`
+checks the test project's scope even when QUnitGS2 is imported as a library.
+Without `globalObject`, checks inspect the library's scope instead.
+Combine this option with console reporting if desired.
+
+New or deleted own enumerable global properties become failing assertions;
+subsequent tests still run. Declare intentional globals before starting tests.
+Changes to existing values and top-level `let`/`const` declarations are not
+detected, and other imported libraries' private scopes are not inspected.
+The bundled engine resets its baseline after a caught test exception, so use
+strict mode as well to catch undeclared assignments.
+
+Checking is off by default. Use the V8 runtime and a published QUnitGS2 version
+containing this fix or the updated source.

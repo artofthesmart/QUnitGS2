@@ -89,6 +89,7 @@
  *
  * Optional settings: logToConsole (default false), cacheResults (default true).
  * Set logToConsole true and cacheResults false for an editor-only test run.
+ * Pass globalObject to check caller globals with QUnit.config.noglobals.
  * </pre>
  */
 
@@ -98,6 +99,12 @@ function init(options) {
     throw new TypeError('QUnitGS2.init options must be an object');
   }
   Object.keys(options).forEach(function(key) {
+    if (key === 'globalObject') {
+      if (options[key] === null || typeof options[key] !== 'object' || Array.isArray(options[key])) {
+        throw new TypeError('QUnitGS2.init globalObject must be an object');
+      }
+      return;
+    }
     if (key !== 'logToConsole' && key !== 'cacheResults') {
       throw new TypeError('Unknown QUnitGS2.init option: ' + key);
     }
@@ -116,6 +123,9 @@ function init(options) {
   }
   
   CACHE_.remove('qunit_test_results')  
+  var cache;
+  QUnit.config.gsGlobalObject = options.globalObject;
+  QUnit.config.pollution = undefined;
   
   QUnit.config.autostart = false;
   
@@ -352,8 +362,6 @@ function getHtml() {
   var htmlCollection = {main: mainTemplate}
   htmlCollection.toolbar = toolbarTemplate;
     
-  testHtml = HtmlService.createHtmlOutput();
-  
   htmlCollection.main.testUrl = htmlCollection.toolbar.testUrl = ScriptApp.getService().getUrl();
   htmlCollection.main.hidepassed = QUnit.config.hidepassed;
   htmlCollection.main.toolbar = htmlCollection.toolbar.evaluate().getContent();

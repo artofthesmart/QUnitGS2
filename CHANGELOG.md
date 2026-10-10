@@ -2,6 +2,21 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Global pollution checks - 2026-10-10
+
+- Fixed false `noglobals` failures caused by the wrapper's accidental `cache`
+  global and removed an unused HTML output assignment that created `testHtml`.
+- Added `init({ globalObject: globalThis })` to check the consumer project's
+  global object when QUnitGS2 is imported as a library (#7). No-argument
+  initialization retains the engine's default scope, and checking is still
+  opt-in through `QUnit.config.noglobals`.
+- Reset the pollution baseline on initialization and added bundled-engine and
+  separate-consumer regressions for clean tests, HTML generation, added/deleted
+  globals, subsequent tests, invalid scopes, and the executable README example.
+- Checks retain upstream limitations: own enumerable property names only, no
+  existing-value or lexical-binding checks, and baseline resets after caught
+  test exceptions. Apps Script deployment remains separate from local checks.
+
 ## Console reporting - 2026-10-10
 
 - Added opt-in assertion, test, and completion records through
