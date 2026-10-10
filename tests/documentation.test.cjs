@@ -166,6 +166,84 @@ test('spreadsheet adapter handles empty and header-only sheets without reading a
   }
 });
 
+function balanceExample() {
+  const blocks = javascriptBlocks(spreadsheetFile);
+  return `${blocks[4]}\n${blocks[5]}`;
+}
+
+test('no-return procedure calls helpers and writes a numeric balance with fresh fixtures', () => {
+  const { tests, context } = runExample(balanceExample(), { testCount: 2, total: 5 });
+  assert.deepEqual(tests.map(test => test.results.name), [
+    'onClick calls helpers and writes G11', 'each test starts with a fresh sheet fixture'
+  ]);
+  assert.equal(context.mainSheet, undefined, 'teardown clears the application fixture');
+});
+
+test('missing sheet scope becomes a visible failure and subsequent procedure tests still run', () => {
+  const source = balanceExample().replace('var returned = onClick();',
+    'mainSheet = undefined; assert.expect(1); var returned = onClick();');
+  const { tests, context } = runExample(source, { testCount: 2, total: 3, failed: 1 });
+  assert.match(tests[0].assertions[0].message, /getRange/);
+  assert.match(tests[0].assertions[0].source, /documentation\.gs/);
+  assert.equal(tests[1].results.failed, 0);
+  assert.equal(context.mainSheet, undefined);
+});
+
+test('throwing procedure helper retains earlier assertions and does not lose suite totals', () => {
+  const source = balanceExample().replace('var returned = onClick();', `
+    assert.expect(2);
+    assert.ok(true, "before calling the helper");
+    mainSheet.getRange = function() { throw new Error("helper service failure"); };
+    var returned = onClick();`);
+  const { tests } = runExample(source, { testCount: 2, total: 4, failed: 1 });
+  assert.equal(tests[0].assertions[0].message, 'before calling the helper');
+  assert.match(tests[0].assertions[1].message, /helper service failure/);
+  assert.equal(tests[1].results.failed, 0);
+});
+
+test('a missing write cannot pass by reading a stale procedure result', () => {
+  const source = balanceExample().replace('sheet.getRange("G11").setValue(balance);', '');
+  const { tests } = runExample(source, { testCount: 2, total: 5, failed: 3 });
+  assert.equal(tests[0].assertions[2].actual, undefined);
+  assert.equal(tests[1].assertions[1].actual, undefined);
+});
+
+test('procedure comparison rejects a numeric string instead of coercing it to the expected number', () => {
+  const source = balanceExample().replace('written = value;', 'written = String(value);');
+  const { tests } = runExample(source, { testCount: 2, total: 5, failed: 2 });
+  assert.equal(tests[0].assertions[2].actual, '2.10970231');
+  assert.equal(tests[0].assertions[2].expected, 2.10970231);
+});
+
+test('imported application procedures require an explicit sheet argument or library setup', () => {
+  const app = vm.createContext({});
+  vm.runInContext(javascriptBlocks(spreadsheetFile)[4], app, { timeout: 5000 });
+  const runner = quickStart.replace('registerMathTests();', 'registerLibraryBalanceTests();');
+  const source = `${runner}
+    var mainSheet = {
+      getRange: function(address) {
+        if (address === "B2:B3") return { getValues: function() { return [[1.1], [1.00970231]]; } };
+        if (address === "G11") return { setValue: function(value) { mainSheet.written = value; } };
+        throw new Error("Unexpected range: " + address);
+      }
+    };
+    function registerLibraryBalanceTests() {
+      QUnit.test("private sheet is not initialized by caller globals", function() {
+        AppUnderTest.onClick();
+      });
+      QUnit.test("explicit adapter argument works across library scopes", function(assert) {
+        AppUnderTest.writeBalance(mainSheet);
+        assert.strictEqual(mainSheet.written, 2.10970231);
+      });
+    }`;
+  const { tests } = runExample(source, {
+    testCount: 2, total: 2, failed: 1, globals: { AppUnderTest: app }
+  });
+  assert.match(tests[0].assertions[0].message, /getRange/);
+  assert.equal(tests[1].results.failed, 0);
+  assert.equal(app.mainSheet, undefined);
+});
+
 test('separate-project guide calls the real example through a library namespace', () => {
   const [application, runner] = javascriptBlocks(existingProjectFile);
   const app = vm.createContext({});

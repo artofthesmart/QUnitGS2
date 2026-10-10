@@ -235,6 +235,19 @@ in order to control which page a user sees when loading your application.
 [Learn more about writing your own
 router.](https://medium.com/@fro_g/routing-in-javascript-d552ff4d2921)
 
+## Testing procedures and spreadsheet writes
+
+Functions do not need to return a value to be tested. Call the procedure inside
+`QUnit.test()`, then assert its effects, such as the value written to a sheet.
+Initialize required sheet references in setup, use a fresh disposable fixture
+for each test, and compare numbers with numbers rather than coercing strings.
+
+The [spreadsheet procedure example](https://qunitgs2.com/how-to-guides/testing-spreadsheet-code#6-test-a-procedure-that-calls-helpers-and-writes-a-value)
+includes a complete `onClick()` runner, nested helper calls, a fake sheet, and
+cleanup. It makes no real service calls. A missing sheet reference or helper
+exception should be reported as a test failure; a blank page or missing suite
+summary never means the procedure passed.
+
 ## Large result reports
 
 Reports above 80,000 UTF-8 bytes are automatically gzip-compressed and

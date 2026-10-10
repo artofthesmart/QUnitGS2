@@ -2,6 +2,17 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Procedure-testing guidance - 2026-10-10
+
+- Added a complete no-return `onClick()` example with nested helper calls,
+  G11 writes, numeric comparisons, fresh fake-sheet setup, and cleanup (#11).
+- Explained caller/library sheet scope, disposable real-service fixtures, and
+  why blank or incomplete reports are not passing tests.
+- Added executable consumer regressions for the normal example, missing sheet
+  references, helper exceptions, absent writes, and numeric-string mistakes.
+- This is guidance and regression coverage for the existing runner, not a new
+  scheduling API or a claim to reproduce the original reporter's private code.
+
 ## Results cache compression - 2026-10-10
 
 - Automatically gzip/base64-encode reports above 80,000 UTF-8 bytes when it

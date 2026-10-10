@@ -1,5 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { collectSuite, openResults } = require('./browser.cjs');
+const fs = require('node:fs');
+const path = require('node:path');
 
 async function renderSuite(page, source) {
   const suite = collectSuite(source);
@@ -106,4 +108,26 @@ test('renders a large compressed report after server-side decoding', async ({ pa
     Array(4).fill('Unicode preserved'));
   await expect(page.locator('#qunit-tests .test-name').last()).toHaveText('subsequent test');
   expect(errors).toEqual([]);
+});
+
+test('renders a procedure helper failure and subsequent fresh-fixture results', async ({ page }) => {
+  const markdown = fs.readFileSync(path.join(__dirname, '..',
+    'website/user/pages/04.how-to-guides/02.testing-spreadsheet-code/default.md'), 'utf8');
+  const blocks = [...markdown.matchAll(/```javascript\r?\n([\s\S]*?)```/g)].map(match => match[1]);
+  const registration = blocks[5].split('function registerBalanceTests()')[1];
+  const source = `${blocks[4]}
+    function registerBalanceTests()${registration}
+    registerBalanceTests();`.replace('var returned = onClick();', `
+      assert.expect(2);
+      assert.ok(true, "before helper");
+      mainSheet.getRange = function() { throw new Error("procedure helper failed"); };
+      var returned = onClick();`);
+  await renderSuite(page, source);
+  await expect(page.locator('#qunit-test-block1 .test-message')).toContainText([
+    'procedure helper failed'
+  ]);
+  await expect(page.locator('#qunit-test-passed1')).toHaveText('1');
+  await expect(page.locator('#qunit-test-failed1')).toHaveText('1');
+  await expect(page.locator('#qunit-test-output1')).toHaveClass('fail');
+  await expect(page.locator('#qunit-test-output2')).toHaveClass('pass');
 });
