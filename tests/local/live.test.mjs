@@ -6,6 +6,7 @@ import vm from "node:vm";
 import { build, output, root } from "../../scripts/build.mjs";
 import { validateResponse } from "../../scripts/results.mjs";
 import { createHtmlService } from "../html-service.cjs";
+import { createUtilities } from "../utilities.cjs";
 
 const buildId = await build();
 const bundle = await readFile(path.join(output, "bundle.gs"), "utf8");
@@ -22,6 +23,7 @@ function runtime(store = new Map()) {
     }
   };
   const context = vm.createContext({
+    Utilities: createUtilities(),
     CacheService: { getUserCache: () => cache, getScriptCache: () => cache },
     ContentService: {
       MimeType: { JSON: "application/json" },
@@ -75,7 +77,8 @@ test("the complete imported synchronous suite survives separate Apps Script requ
   assert.ok(result.tests.some(item => item.results.module === "dump"));
   assert.ok(result.tests.some(item => item.results.module === "QUnit.objectType"));
   assert.ok(result.tests.every(item => !item.results.name.includes("FORCE FAILURE")));
-  assert.ok(start.store.size > 2, "results exceeding 100 KB are split across entries");
+  assert.ok([...start.store.values()].some(value => value.startsWith("QUNITGS2:GZIP:1:")),
+    "large reports are compressed before the live adapter persists them");
   assert.ok(JSON.stringify(result).length > 100000);
 });
 

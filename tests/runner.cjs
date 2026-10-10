@@ -3,9 +3,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const { createHtmlService } = require('./html-service.cjs');
+const { createUtilities } = require('./utilities.cjs');
 
 function createLibrary(cache = new Map()) {
   const context = vm.createContext({
+    Utilities: createUtilities(),
     HtmlService: createHtmlService(name => context._include(name)),
     ScriptApp: { getService: () => ({ getUrl: () => 'https://qunitgs2.test/' }) },
     CacheService: {

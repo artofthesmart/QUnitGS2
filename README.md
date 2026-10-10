@@ -235,6 +235,23 @@ in order to control which page a user sees when loading your application.
 [Learn more about writing your own
 router.](https://medium.com/@fro_g/routing-in-javascript-d552ff4d2921)
 
+## Large result reports
+
+Reports above 80,000 UTF-8 bytes are automatically gzip-compressed and
+base64-encoded when that reduces their stored size. Small reports stay as plain
+JSON. `getResultsFromServer()` decompresses transparently and still returns the
+same JSON string; no browser or consumer bridge changes are needed.
+
+The library reads both older plain-JSON entries and its versioned compressed
+format. Compression is not encryption. Cached results are still temporary,
+shared within the same user cache scope, and can be evicted by Google.
+Reports that exceed the conservative 100,000-byte stored-value limit even after
+compression fail explicitly; split the suite or use console-only reporting.
+
+This requires a published library version containing the fix or the updated
+source. Older versions cannot read the new compressed format; rerun tests after
+switching versions to replace cached reports.
+
 ## Result states
 
 The results page starts with a neutral **Loading test results** message. It only
@@ -301,7 +318,7 @@ To upgrade to a later version of QUnit, simply:
 2. Ensure the main QUnit object is exported from the main Qunit library by
    adding to `exportQUnit()`:
 ```javascript
-if (typeof HtmlService !== undefined) global$1.QUnit = QUnit;
+if (typeof HtmlService !== "undefined") global$1.QUnit = QUnit;
 ```
  
 3. Create/deploy a new version of the script project. See [Google's guidance on

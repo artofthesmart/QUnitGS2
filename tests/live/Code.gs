@@ -18,7 +18,7 @@ function doGet(e) {
     runLiveTests_(parameters.runId, false);
     response.status = "running";
   } else if (parameters.action === "results") {
-    var raw = liveCache_(parameters.runId).get();
+    var raw = decodeResultCache_(liveCache_(parameters.runId).get());
     if (raw === null) {
       response.status = "pending";
     } else {

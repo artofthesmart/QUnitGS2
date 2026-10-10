@@ -60,6 +60,17 @@ overlapping runs using the same cache scope, such as multiple tabs under the
 same execution identity. Close duplicate tabs and rerun one small suite.
 The cache is not durable storage or a run-isolation mechanism.
 
+Library versions containing the cache-compression fix automatically gzip and
+base64-encode reports above 80,000 UTF-8 bytes when it saves space. The browser
+still receives ordinary JSON through `getResultsFromServer()`. Compression
+does not prevent eviction or isolate overlapping runs.
+
+If results exceed the 100,000-byte stored-value limit even after compression,
+split the suite or use `QUnitGS2.init({ logToConsole: true, cacheResults: false })`
+for console-only reporting. Compression errors and corrupted cache values are
+errors, not completed passing suites. Rerun tests after changing library versions
+because older versions cannot read the compressed format.
+
 ## Missing or throwing tests
 
 Defining `registerOrderTests()` does not call it. Add the call between `init()`

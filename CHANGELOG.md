@@ -2,6 +2,21 @@
 
 Notable changes to QUnitGS2 are documented here.
 
+## Results cache compression - 2026-10-10
+
+- Automatically gzip/base64-encode reports above 80,000 UTF-8 bytes when it
+  reduces cache size (#6), using Apps Script's `Utilities` APIs.
+- Transparently decode compressed entries for result collection, the public
+  result bridge, and the live test JSON endpoint. Small reports and older plain
+  JSON entries remain compatible; the public JSON result format is unchanged.
+- Explicitly reject reports exceeding the conservative 100,000-byte stored
+  limit after compression and propagate service/corruption errors.
+- Added real gzip/UTF-8 test substitutes, production cross-request regressions,
+  quota and corruption cases, and large-report Chromium rendering coverage.
+- Cache eviction, overlapping runs, and total Apps Script service quotas still
+  apply. Old library versions cannot decode the new format; rerun after switching
+  versions. Publication and live deployment remain separate from local checks.
+
 ## Global pollution checks - 2026-10-10
 
 - Fixed false `noglobals` failures caused by the wrapper's accidental `cache`
