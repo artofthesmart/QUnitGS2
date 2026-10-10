@@ -191,13 +191,13 @@ function init(options) {
   
   function push(type, details) {
     
-    var cacheString = CACHE_.get('qunit_test_results')
+    var cacheString = getResultsFromServer()
     cache = (cacheString === null) ? [] : JSON.parse(cacheString)
     updateCacheWithTestDetails()
     
     CACHE_.put(
       'qunit_test_results',
-      JSON.stringify(cache)
+      encodeResultCache_(JSON.stringify(cache))
     )
     
     return
@@ -384,7 +384,46 @@ function getHtml() {
  */
 
 function getResultsFromServer() {
-  return CACHE_.get('qunit_test_results')
+  return decodeResultCache_(CACHE_.get('qunit_test_results'))
+}
+
+// Keep small reports readable; gzip only near the cache's per-value limit.
+function encodeResultCache_(json) {
+  var byteLength = resultCacheByteLength_(json);
+  if (byteLength <= 80000) return json;
+  var compressed = 'QUNITGS2:GZIP:1:' +
+    Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(json, 'application/json')).getBytes());
+  var value = compressed.length < byteLength ? compressed : json;
+  if (resultCacheByteLength_(value) > 100000) {
+    throw new Error('QUnitGS2 results exceed the 100 KB cache limit even after compression. ' +
+      'Run fewer tests or use console-only reporting.');
+  }
+  return value;
+}
+
+function decodeResultCache_(value) {
+  if (value === null || value.charAt(0) === '[') return value;
+  var prefix = 'QUNITGS2:GZIP:1:';
+  if (value.indexOf(prefix) !== 0) {
+    throw new Error('Unrecognized QUnitGS2 result cache format');
+  }
+  var bytes = Utilities.base64Decode(value.slice(prefix.length));
+  return Utilities.ungzip(Utilities.newBlob(bytes)).getDataAsString('UTF-8');
+}
+
+function resultCacheByteLength_(value) {
+  var bytes = 0;
+  for (var i = 0; i < value.length; i++) {
+    var code = value.charCodeAt(i);
+    if (code < 0x80) bytes++;
+    else if (code < 0x800) bytes += 2;
+    else if (code >= 0xD800 && code <= 0xDBFF && i + 1 < value.length &&
+        value.charCodeAt(i + 1) >= 0xDC00 && value.charCodeAt(i + 1) <= 0xDFFF) {
+      bytes += 4;
+      i++;
+    } else bytes += 3;
+  }
+  return bytes;
 }
 
 /**

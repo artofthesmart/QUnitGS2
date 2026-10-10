@@ -88,3 +88,22 @@ test('preserves all-passing results and the passed-test filter', async ({ page }
   await page.locator('#qunit-filter-pass').uncheck();
   await expect(page.locator('#qunit-tests')).not.toHaveClass(/hidepass/);
 });
+
+test('renders a large compressed report after server-side decoding', async ({ page }) => {
+  const suite = collectSuite(`
+    QUnit.test('large cached values', function(assert) {
+      for (var i = 0; i < 4; i++) {
+        assert.strictEqual('caf\\u00e9 \\ud83d\\ude00'.repeat(4000),
+          'caf\\u00e9 \\ud83d\\ude00'.repeat(4000), 'Unicode preserved');
+      }
+    });
+  `);
+  expect(Buffer.byteLength(suite.resultsString)).toBeGreaterThan(100000);
+  const errors = await openResults(page, suite);
+  await expect(page.locator('#qunit-total')).toHaveText('5');
+  await expect(page.locator('#qunit-failed')).toHaveText('0');
+  await expect(page.locator('#qunit-test-block1 .test-message')).toHaveText(
+    Array(4).fill('Unicode preserved'));
+  await expect(page.locator('#qunit-tests .test-name').last()).toHaveText('subsequent test');
+  expect(errors).toEqual([]);
+});

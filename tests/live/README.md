@@ -192,12 +192,13 @@ JSON results are isolated by build and run ID and expire after ten minutes
 (Google can evict them earlier). The browser RPC reads the latest browser run.
 The command uses bounded polling and never treats missing results as passing.
 
-This adapter is test infrastructure, not a production cache fix. A passing live
-run verifies the engine, collector, and deployed test project, but cannot prove
-that a consumer using the library's original single-entry cache will handle
-equally large reports. Separate [production-cache regressions](../local/cache.test.mjs)
-exercise the unmodified path and explicitly retain its oversized-report error
-as a known limitation. Changing the production cache is outside this import.
+This adapter remains test infrastructure. Production now compresses large
+reports before writing its single cache entry; the live adapter persists the same
+encoded value and the JSON endpoint decodes it through the production codec.
+Separate [production-cache regressions](../local/cache.test.mjs) exercise gzip
+round trips, Unicode boundaries, older plain JSON, and reports that still exceed
+the limit after compression. A passing live run does not establish durable cache
+storage or unlimited report size for library consumers.
 
 **This endpoint is public and runs as its owner.** Anyone with its URL can run
 tests, consume project quotas, and read test output; run IDs are correlation

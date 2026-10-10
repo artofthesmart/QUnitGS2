@@ -35,7 +35,8 @@ documentation, and result-state tests.
 `live/` owns the consolidated Apps Script test project and imported QUnit cases.
 `local/` adds offline build, run/result protocol, and clasp/wget workflow
 regressions using service and command doubles. It also tests the unmodified
-production cache path, including its known oversized-report error, separately
+production cache path, including gzip round trips, Unicode byte boundaries,
+legacy JSON compatibility, and explicit incompressible-report errors, separately
 from the live project's chunked adapter. See [live setup](live/README.md)
 for the separate `npm run test:live` command; it is never run by offline CI.
 
