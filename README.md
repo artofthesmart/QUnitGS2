@@ -144,6 +144,44 @@ contain application data: enable logging only where that data is safe to record.
 This requires a published library version containing the feature or the updated
 source; it does not remove Apps Script's asynchronous testing limitations.
 
+### Check for accidental globals
+
+Enable `QUnit.config.noglobals` before registering tests. When importing QUnitGS2
+as a library, also pass the test project's global object so checks inspect the
+caller rather than only the library:
+
+```javascript
+var QUnit = QUnitGS2.QUnit;
+
+function doGet() {
+   QUnitGS2.init({ globalObject: globalThis });
+   QUnit.config.noglobals = true;
+   QUnit.test("keeps temporary variables local", function(assert) {
+      var temporary = 1;
+      assert.strictEqual(temporary, 1);
+   });
+   QUnit.start();
+   return QUnitGS2.getHtml();
+}
+```
+
+`globalObject` is optional; without it, checks inspect the library's own global
+object. It can also be combined with the console options. Global checking
+remains off by default. Checks report newly introduced or deleted own enumerable
+properties as assertion failures and continue to subsequent tests. The library's
+collector and HTML generation no longer create accidental globals themselves.
+
+Declare intentional globals before starting the suite. This detects property
+additions/deletions, not changes to existing values, non-enumerable properties,
+or top-level `let`/`const` bindings. It checks only the supplied scope, not globals
+inside other imported libraries. The behavior follows the bundled QUnit engine,
+including its baseline reset after a caught test exception; use strict mode too
+to catch undeclared assignments that throw before the pollution check.
+
+Use `globalThis` in the Apps Script V8 runtime. This requires a library version
+containing this fix or the updated source; selecting an older published version
+will not pick it up automatically.
+
 ## Deploy as a web app.
 
 To use the HTML results page, you must either

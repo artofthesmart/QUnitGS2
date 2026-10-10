@@ -3479,8 +3479,10 @@
   	config.pollution = [];
 
   	if (config.noglobals) {
-  		for (var key in global$1) {
-  			if (hasOwn.call(global$1, key)) {
+  		// Apps Script consumers have a separate global scope from the library.
+  		var pollutionGlobal = config.gsGlobalObject || global$1;
+  		for (var key in pollutionGlobal) {
+  			if (hasOwn.call(pollutionGlobal, key)) {
 
   				// In Opera sometimes DOM element ids show up here, ignore them
   				if (/^qunit-test-output/.test(key)) {
